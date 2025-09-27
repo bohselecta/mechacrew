@@ -138,20 +138,20 @@ export default function AIPreview({ feature, position, onAccept, onReject, onGen
               />
             </div>
             
-            <p className="text-steel-gray text-xs mb-3">{previewComponent.description}</p>
+            <p className="text-white text-xs mb-3">{previewComponent.description}</p>
             
             <div className="grid grid-cols-3 gap-2 text-xs">
               <div className="text-center">
                 <p className="text-neon-blue font-bold">{previewComponent.power}</p>
-                <p className="text-steel-gray">Power</p>
+                <p className="text-white text-xs">Power</p>
               </div>
               <div className="text-center">
                 <p className="text-neon-blue font-bold">{previewComponent.durability}</p>
-                <p className="text-steel-gray">Durability</p>
+                <p className="text-white text-xs">Durability</p>
               </div>
               <div className="text-center">
                 <p className="text-neon-blue font-bold">{previewComponent.weight}</p>
-                <p className="text-steel-gray">Weight</p>
+                <p className="text-white text-xs">Weight</p>
               </div>
             </div>
           </div>
