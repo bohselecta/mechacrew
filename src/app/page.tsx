@@ -283,7 +283,7 @@ export default function MechaCrewApp() {
       >
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center">
-            <div className="w-24 h-24 flex items-center justify-center">
+            <div className="w-36 h-36 flex items-center justify-center">
               <img 
                 src="/mecha-header-logo.png" 
                 alt="MechaCrew Logo" 
