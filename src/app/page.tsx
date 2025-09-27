@@ -18,6 +18,8 @@ import VotingComponent from '@/components/VotingComponent'
 import ActivityFeed from '@/components/ActivityFeed'
 import PublicCanvas from '@/components/PublicCanvas'
 import LoadingScreen from '@/components/LoadingScreen'
+import MechaSVG from '@/components/MechaSVG'
+import AIPreview from '@/components/AIPreview'
 
 interface MechaComponent {
   id: string
@@ -57,6 +59,9 @@ export default function MechaCrewApp() {
   const [sessionId] = useState('demo-session')
   const [userId] = useState(`user-${Math.random().toString(36).substr(2, 9)}`)
   const [showCanvas, setShowCanvas] = useState(false)
+  const [selectedFeature, setSelectedFeature] = useState<string | null>(null)
+  const [featurePosition, setFeaturePosition] = useState<{ x: number, y: number } | null>(null)
+  const [addedComponents, setAddedComponents] = useState<string[]>([])
 
   // Initialize with demo components
   useEffect(() => {
@@ -189,6 +194,32 @@ export default function MechaCrewApp() {
     setPendingVote(null)
   }
 
+  const handleFeatureSelect = (feature: string, position: { x: number, y: number }) => {
+    setSelectedFeature(feature)
+    setFeaturePosition(position)
+    setShowCollaboration(true) // Open collaboration panel for AI preview
+  }
+
+  const handleComponentAccept = (component: any) => {
+    // Add component to mecha
+    setMechaComponents(prev => [...prev, component])
+    setAddedComponents(prev => [...prev, selectedFeature!])
+    setSelectedFeature(null)
+    setFeaturePosition(null)
+    setShowCollaboration(false)
+  }
+
+  const handleComponentReject = () => {
+    setSelectedFeature(null)
+    setFeaturePosition(null)
+    setShowCollaboration(false)
+  }
+
+  const handleGenerateNew = () => {
+    // This will trigger a new AI generation in the AIPreview component
+    // The component will re-render and generate a new preview
+  }
+
   if (!isLoaded) {
     return <LoadingScreen onComplete={() => setIsLoaded(true)} />
   }
@@ -254,48 +285,13 @@ export default function MechaCrewApp() {
           </div>
         )}
         
-        {/* 3D Builder Placeholder */}
+        {/* Mecha Builder */}
         <div className={`${showCanvas ? 'flex-2' : 'flex-1'} relative`}>
-          <div className="absolute inset-0 bg-gradient-to-br from-steel-gray to-gunmetal flex items-center justify-center">
-            <div className="text-center space-y-8">
-              {/* Hero Logo */}
-              <div className="w-48 h-48 mx-auto flex items-center justify-center">
-                <img 
-                  src="/MC-Logo.png" 
-                  alt="MechaCrew Hero Logo" 
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              
-              <div>
-                <h2 className="text-4xl font-orbitron font-black text-white chrome-text mb-4">
-                  3D MECHA BUILDER
-                </h2>
-                <p className="text-neon-blue text-lg font-bold uppercase tracking-wider">
-                  Interactive Construction Zone
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
-                {mechaComponents.map((component) => (
-                  <div
-                    key={component.id}
-                    className="mecha-panel p-4 text-center"
-                  >
-                    <div 
-                      className="w-8 h-8 mx-auto mb-2 rounded"
-                      style={{ backgroundColor: component.color }}
-                    />
-                    <h3 className="text-white font-bold text-sm">{component.name}</h3>
-                    <p className="text-gray-400 text-xs">{component.type}</p>
-                    <div className="text-accent-yellow text-xs font-bold">
-                      {component.power}MW • {component.weight}t
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <MechaSVG 
+            onFeatureSelect={handleFeatureSelect}
+            selectedFeature={selectedFeature || undefined}
+            addedComponents={addedComponents}
+          />
           
           {/* Overlay Controls */}
           <div className="absolute top-4 left-4 space-y-2">
@@ -385,7 +381,17 @@ export default function MechaCrewApp() {
               exit={{ x: '100%' }}
               className="w-80 bg-steel-gray border-l-2 border-neon-blue h-full overflow-y-auto"
             >
-              <CollaborationPanel users={users} />
+              {selectedFeature && featurePosition ? (
+                <AIPreview
+                  feature={selectedFeature}
+                  position={featurePosition}
+                  onAccept={handleComponentAccept}
+                  onReject={handleComponentReject}
+                  onGenerateNew={handleGenerateNew}
+                />
+              ) : (
+                <CollaborationPanel users={users} />
+              )}
             </motion.div>
           )}
         </AnimatePresence>
