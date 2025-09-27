@@ -90,7 +90,9 @@ export default function PublicCanvas({ sessionId }: PublicCanvasProps) {
 
       {components.length === 0 ? (
         <div className="text-center py-8">
-          <div className="text-6xl mb-4">🤖</div>
+          <div className="w-32 h-32 mx-auto mb-4 bg-gradient-to-br from-steel-gray to-gunmetal rounded-lg flex items-center justify-center border-2 border-neon-blue">
+            <div className="text-4xl">⚙️</div>
+          </div>
           <p className="text-steel-gray text-lg">No components submitted yet</p>
           <p className="text-steel-gray text-sm">Be the first to add a component!</p>
         </div>

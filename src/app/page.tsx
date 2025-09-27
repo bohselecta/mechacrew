@@ -49,7 +49,7 @@ interface User {
 }
 
 export default function MechaCrewApp() {
-  const [isLoaded, setIsLoaded] = useState(false)
+  const [isLoaded, setIsLoaded] = useState(true)
   const [showAIPanel, setShowAIPanel] = useState(false)
   const [showCollaboration, setShowCollaboration] = useState(false)
   const [isSimulating, setIsSimulating] = useState(false)
@@ -231,7 +231,8 @@ export default function MechaCrewApp() {
   const handleAccountCreate = () => {
     setShowWelcome(false)
     setIsGuestMode(false)
-    // TODO: Implement account creation flow
+    // Clerk will handle the sign-in flow
+    window.location.href = '/sign-in'
   }
 
   const handleGuestView = () => {
@@ -272,10 +273,6 @@ export default function MechaCrewApp() {
   const handleVotingApproval = (component: any) => {
     setCurrentWorkflow('approved')
     // Component is approved, ready to add to mecha
-  }
-
-  if (!isLoaded) {
-    return <LoadingScreen onComplete={() => setIsLoaded(true)} />
   }
 
   if (showWelcome) {
