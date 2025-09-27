@@ -21,7 +21,6 @@ import LoadingScreen from '@/components/LoadingScreen'
 import MechaSVG from '@/components/MechaSVG'
 import AIPreview from '@/components/AIPreview'
 import WelcomeScreen from '@/components/WelcomeScreen'
-import SVGPreview from '@/components/SVGPreview'
 
 interface MechaComponent {
   id: string
@@ -66,8 +65,7 @@ export default function MechaCrewApp() {
   const [addedComponents, setAddedComponents] = useState<string[]>([])
   const [showWelcome, setShowWelcome] = useState(true)
   const [isGuestMode, setIsGuestMode] = useState(false)
-  const [currentWorkflow, setCurrentWorkflow] = useState<'text' | 'svg' | 'voting' | 'approved'>('text')
-  const [currentComponentData, setCurrentComponentData] = useState<any>(null)
+  const [currentWorkflow, setCurrentWorkflow] = useState<'text' | 'voting' | 'approved'>('text')
 
   // Initialize with demo components
   useEffect(() => {
@@ -241,32 +239,21 @@ export default function MechaCrewApp() {
   }
 
   const handleTextApproval = (component: any) => {
-    setCurrentComponentData(component)
-    setCurrentWorkflow('svg')
-    // Component data is now stored and will be passed to SVG preview
-  }
-
-  const handleSVGApproval = (svgPart: any) => {
-    if (!svgPart || !svgPart.name) {
-      console.error('Invalid SVG part data:', svgPart)
-      return
-    }
-    
     setCurrentWorkflow('voting')
-    // Send to voting system with SVG part data
+    // Send directly to voting system - skip SVG complexity
     setPendingVote({
-      componentId: (svgPart.name || 'component') + '-' + Date.now(),
+      componentId: (component.name || 'component') + '-' + Date.now(),
       sessionId,
       userId,
       componentData: {
-        ...svgPart,
-        type: svgPart.componentType || 'weapon',
-        power: svgPart.powerWatts ? Math.round(svgPart.powerWatts / 1000) : 100,
-        durability: svgPart.durability || 85,
-        weight: svgPart.massKg ? Math.round(svgPart.massKg) : 50
+        ...component,
+        type: component.type || 'weapon',
+        power: component.power || 100,
+        durability: component.durability || 85,
+        weight: component.weight || 50
       },
       creatorName: `User_${userId.slice(-4)}`,
-      previewDescription: svgPart.name || 'AI Generated Component'
+      previewDescription: component.name || 'AI Generated Component'
     })
   }
 
@@ -398,13 +385,32 @@ export default function MechaCrewApp() {
                     onReject={handleComponentReject}
                     onGenerateNew={handleGenerateNew}
                   />
-                ) : currentWorkflow === 'svg' ? (
-                  <SVGPreview
-                    componentData={currentComponentData}
-                    onApprove={handleSVGApproval}
-                    onReject={handleComponentReject}
-                    onGenerateNew={handleGenerateNew}
+                ) : currentWorkflow === 'voting' && pendingVote ? (
+                  <VotingComponent
+                    componentId={pendingVote.componentId}
+                    sessionId={pendingVote.sessionId}
+                    userId={pendingVote.userId}
+                    componentData={pendingVote.componentData}
+                    creatorName={pendingVote.creatorName}
+                    previewDescription={pendingVote.previewDescription}
+                    onVote={handleVote}
+                    onClose={() => setPendingVote(null)}
                   />
+                ) : currentWorkflow === 'approved' ? (
+                  <div className="mecha-panel p-6 text-center">
+                    <h3 className="text-accent-yellow font-bold text-lg mb-4">✅ COMPONENT APPROVED!</h3>
+                    <p className="text-white text-sm mb-4">Ready to add to your mecha</p>
+                    <button
+                      onClick={() => {
+                        setAddedComponents([...addedComponents, selectedFeature])
+                        setCurrentWorkflow('text')
+                        setSelectedFeature(null)
+                      }}
+                      className="mecha-button w-full"
+                    >
+                      ADD TO MECHA
+                    </button>
+                  </div>
                 ) : (
                   <CollaborationPanel users={users} />
                 )
