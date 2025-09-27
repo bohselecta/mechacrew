@@ -67,6 +67,7 @@ export default function MechaCrewApp() {
   const [showWelcome, setShowWelcome] = useState(true)
   const [isGuestMode, setIsGuestMode] = useState(false)
   const [currentWorkflow, setCurrentWorkflow] = useState<'text' | 'svg' | 'voting' | 'approved'>('text')
+  const [currentComponentData, setCurrentComponentData] = useState<any>(null)
 
   // Initialize with demo components
   useEffect(() => {
@@ -217,6 +218,8 @@ export default function MechaCrewApp() {
   const handleComponentReject = () => {
     setSelectedFeature(null)
     setFeaturePosition(null)
+    setCurrentWorkflow('text')
+    setCurrentComponentData(null)
     setShowCollaboration(false)
   }
 
@@ -237,8 +240,9 @@ export default function MechaCrewApp() {
   }
 
   const handleTextApproval = (component: any) => {
+    setCurrentComponentData(component)
     setCurrentWorkflow('svg')
-    // Component data is passed to SVG preview
+    // Component data is now stored and will be passed to SVG preview
   }
 
   const handleSVGApproval = (svgPart: any) => {
@@ -359,39 +363,6 @@ export default function MechaCrewApp() {
             
           </div>
           
-          {/* Status Panel */}
-          <div className="absolute bottom-4 left-4 mecha-panel p-4 min-w-[300px]">
-            <h3 className="text-accent-yellow font-bold uppercase tracking-wider mb-2">
-              LIVE MECHA STATUS
-            </h3>
-            <p className="text-steel-gray text-xs mb-3">
-              Persistent database object • Updates in real-time
-            </p>
-            <div className="space-y-2 text-white text-sm">
-              <div className="flex justify-between">
-                <span>Components:</span>
-                <span className="text-neon-blue font-bold">{mechaComponents.length}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Total Power:</span>
-                <span className="text-neon-blue font-bold">
-                  {mechaComponents.reduce((sum, comp) => sum + comp.power, 0)} MW
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Weight:</span>
-                <span className="text-neon-blue font-bold">
-                  {mechaComponents.reduce((sum, comp) => sum + comp.weight, 0)} tons
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Durability:</span>
-                <span className="text-neon-blue font-bold">
-                  {Math.round(mechaComponents.reduce((sum, comp) => sum + comp.durability, 0) / mechaComponents.length)}%
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* AI Panel */}
@@ -432,7 +403,7 @@ export default function MechaCrewApp() {
                   />
                 ) : currentWorkflow === 'svg' ? (
                   <SVGPreview
-                    componentData={pendingVote?.componentData}
+                    componentData={currentComponentData}
                     onApprove={handleSVGApproval}
                     onReject={handleComponentReject}
                     onGenerateNew={handleGenerateNew}
