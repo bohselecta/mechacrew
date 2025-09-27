@@ -174,8 +174,12 @@ export default function MechaCrewApp() {
       >
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-mecha-red rounded flex items-center justify-center">
-              <Zap className="w-6 h-6 text-white" />
+            <div className="w-16 h-16 flex items-center justify-center">
+              <img 
+                src="/mecha-header-logo.png" 
+                alt="MechaCrew Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <h1 className="text-2xl font-orbitron font-black text-white chrome-text">
@@ -218,8 +222,13 @@ export default function MechaCrewApp() {
         <div className="flex-1 relative">
           <div className="absolute inset-0 bg-gradient-to-br from-steel-gray to-gunmetal flex items-center justify-center">
             <div className="text-center space-y-8">
-              <div className="w-32 h-32 bg-mecha-red rounded-lg flex items-center justify-center mx-auto shadow-2xl">
-                <Zap className="w-16 h-16 text-white" />
+              {/* Hero Logo */}
+              <div className="w-48 h-48 mx-auto flex items-center justify-center">
+                <img 
+                  src="/MC-Logo.png" 
+                  alt="MechaCrew Hero Logo" 
+                  className="w-full h-full object-contain"
+                />
               </div>
               
               <div>

@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['localhost'],
+    domains: ['localhost', 'themechacrew-qcpxkge9e-mygummy.vercel.app'],
   },
   env: {
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
