@@ -14,6 +14,8 @@ import {
 import AIPanel from '@/components/AIPanel'
 import CollaborationPanel from '@/components/CollaborationPanel'
 import LogoAnimation from '@/components/LogoAnimation'
+import VotingComponent from '@/components/VotingComponent'
+import ActivityFeed from '@/components/ActivityFeed'
 
 interface MechaComponent {
   id: string
@@ -49,6 +51,9 @@ export default function MechaCrewApp() {
   const [users, setUsers] = useState<User[]>([])
   const [isConnected, setIsConnected] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [pendingVote, setPendingVote] = useState<any>(null)
+  const [sessionId] = useState('demo-session')
+  const [userId] = useState(`user-${Math.random().toString(36).substr(2, 9)}`)
 
   // Initialize with demo components
   useEffect(() => {
@@ -98,28 +103,41 @@ export default function MechaCrewApp() {
   const handleAICommand = async (command: string) => {
     setIsGenerating(true)
     
-    // Simulate AI processing
-    setTimeout(() => {
-      const newComponent: MechaComponent = {
-        id: `component-${Date.now()}`,
-        type: 'weapon',
-        name: 'AI Generated Laser Cannon',
-        description: `Generated from: "${command}"`,
-        position: [2, 1, 0],
-        rotation: [0, 0, 0],
-        scale: [0.8, 0.8, 2],
-        color: '#08B0D5',
-        material: 'energy',
-        power: 120,
-        durability: 85,
-        weight: 25,
-        createdBy: 'ai',
-        createdAt: new Date()
-      }
+    try {
+      const response = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          command, 
+          existingComponents: mechaComponents,
+          sessionId,
+          userId
+        })
+      })
       
-      setMechaComponents(prev => [...prev, newComponent])
+      const data = await response.json()
+      
+      if (data.success) {
+        if (data.needsVoting) {
+          // Show voting modal
+          setPendingVote({
+            componentId: data.component.id,
+            sessionId: data.votingData.sessionId,
+            userId: data.votingData.creatorId,
+            componentData: data.component,
+            creatorName: `User_${data.votingData.creatorId.slice(-4)}`,
+            previewDescription: data.votingData.previewDescription
+          })
+        } else {
+          // Add immediately (refinement)
+          setMechaComponents(prev => [...prev, data.component])
+        }
+      }
+    } catch (error) {
+      console.error('AI command failed:', error)
+    } finally {
       setIsGenerating(false)
-    }, 2000)
+    }
   }
 
   const toggleSimulation = () => {
@@ -128,6 +146,14 @@ export default function MechaCrewApp() {
 
   const resetMecha = () => {
     setMechaComponents(prev => prev.filter(comp => comp.createdBy === 'system'))
+  }
+
+  const handleVote = (componentId: string, vote: 'approve' | 'reject') => {
+    // Vote is handled by VotingComponent
+  }
+
+  const handleVoteClose = () => {
+    setPendingVote(null)
   }
 
   if (!isLoaded) {
@@ -162,6 +188,8 @@ export default function MechaCrewApp() {
           </div>
           
           <div className="flex items-center space-x-4">
+            <ActivityFeed sessionId={sessionId} userId={userId} />
+            
             <div className="flex items-center space-x-2">
               {isConnected ? (
                 <Wifi className="w-5 h-5 text-neon-blue" />
@@ -317,6 +345,22 @@ export default function MechaCrewApp() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Voting Modal */}
+      <AnimatePresence>
+        {pendingVote && (
+          <VotingComponent
+            componentId={pendingVote.componentId}
+            sessionId={pendingVote.sessionId}
+            userId={pendingVote.userId}
+            componentData={pendingVote.componentData}
+            creatorName={pendingVote.creatorName}
+            previewDescription={pendingVote.previewDescription}
+            onVote={handleVote}
+            onClose={handleVoteClose}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

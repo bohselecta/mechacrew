@@ -24,12 +24,18 @@ interface MechaComponent {
 export async function POST(request: NextRequest) {
   let command = ''
   try {
-    const { command: requestCommand, existingComponents } = await request.json()
+    const { command: requestCommand, existingComponents, sessionId, userId, isRefinement = false } = await request.json()
     command = requestCommand
 
     if (!command) {
       return NextResponse.json({ error: 'Command is required' }, { status: 400 })
     }
+
+    // Check if this is a refinement (no voting needed) or major addition (voting required)
+    const refinementKeywords = ['adjust', 'modify', 'tweak', 'refine', 'improve', 'enhance', 'polish']
+    const isRefinementCommand = refinementKeywords.some(keyword => 
+      command.toLowerCase().includes(keyword)
+    ) || isRefinement
 
     // Create AI prompt for mecha component generation
     const systemPrompt = `You are an AI mecha designer for MechaCrew, a collaborative 3D mecha builder. 
@@ -50,10 +56,13 @@ export async function POST(request: NextRequest) {
       "power": number (0-200),
       "durability": number (0-100),
       "weight": number (0-100),
-      "reasoning": "Why this component fits the command"
+      "reasoning": "Why this component fits the command",
+      "isMajorAddition": boolean,
+      "previewDescription": "What this component will look like"
     }
     
-    Make components realistic and balanced. Consider existing components for positioning.`
+    Make components realistic and balanced. Consider existing components for positioning.
+    Mark as "isMajorAddition": true for new components, false for refinements.`
 
     if (!XAI_API_KEY) {
       throw new Error('XAI API key not configured')
@@ -127,11 +136,33 @@ export async function POST(request: NextRequest) {
       createdAt: new Date()
     }
 
-    return NextResponse.json({
-      success: true,
-      component,
-      reasoning: componentData.reasoning || 'AI generated component based on user command'
-    })
+    // Determine if this needs voting or can be added immediately
+    const isMajorAddition = componentData.isMajorAddition !== false && !isRefinementCommand
+
+    if (isMajorAddition) {
+      // Send to voting system
+      return NextResponse.json({
+        success: true,
+        component,
+        needsVoting: true,
+        votingData: {
+          componentId: component.id,
+          sessionId,
+          creatorId: userId,
+          previewDescription: componentData.previewDescription || componentData.description,
+          isMajorAddition: true
+        },
+        reasoning: componentData.reasoning || 'AI generated component awaiting team approval'
+      })
+    } else {
+      // Add immediately (refinement)
+      return NextResponse.json({
+        success: true,
+        component,
+        needsVoting: false,
+        reasoning: componentData.reasoning || 'AI refinement applied immediately'
+      })
+    }
 
   } catch (error) {
     console.error('AI generation error:', error)
