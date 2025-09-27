@@ -242,21 +242,26 @@ export default function MechaCrewApp() {
   }
 
   const handleSVGApproval = (svgPart: any) => {
+    if (!svgPart || !svgPart.name) {
+      console.error('Invalid SVG part data:', svgPart)
+      return
+    }
+    
     setCurrentWorkflow('voting')
     // Send to voting system with SVG part data
     setPendingVote({
-      componentId: svgPart.name + '-' + Date.now(),
+      componentId: (svgPart.name || 'component') + '-' + Date.now(),
       sessionId,
       userId,
       componentData: {
         ...svgPart,
-        type: svgPart.componentType,
+        type: svgPart.componentType || 'weapon',
         power: svgPart.powerWatts ? Math.round(svgPart.powerWatts / 1000) : 100,
         durability: svgPart.durability || 85,
         weight: svgPart.massKg ? Math.round(svgPart.massKg) : 50
       },
       creatorName: `User_${userId.slice(-4)}`,
-      previewDescription: svgPart.name
+      previewDescription: svgPart.name || 'AI Generated Component'
     })
   }
 

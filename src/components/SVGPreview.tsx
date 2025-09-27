@@ -35,7 +35,10 @@ export default function SVGPreview({ componentData, onApprove, onReject, onGener
         const data = await response.json()
         
         if (data.success) {
+          console.log('SVG generation successful:', data.svgPart)
           setSvgPart(data.svgPart)
+        } else {
+          console.error('SVG generation failed:', data.error)
         }
       } catch (error) {
         console.error('SVG generation failed:', error)
@@ -154,9 +157,15 @@ export default function SVGPreview({ componentData, onApprove, onReject, onGener
         
         <div className="flex space-x-3">
           <button
-            onClick={() => svgPart && onApprove(svgPart)}
+            onClick={() => {
+              if (svgPart && svgPart.name) {
+                onApprove(svgPart)
+              } else {
+                console.error('Cannot approve: SVG part data is incomplete', svgPart)
+              }
+            }}
             className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded transition-colors flex items-center justify-center space-x-2"
-            disabled={!svgPart}
+            disabled={!svgPart || !svgPart.name}
           >
             <CheckCircle className="w-4 h-4" />
             <span>APPROVE FOR VOTING</span>
