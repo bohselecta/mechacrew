@@ -17,8 +17,37 @@ export default function SVGPreview({ componentData, onApprove, onReject, onGener
   const [svgPart, setSvgPart] = useState<MechaSvgPart | null>(null)
   const [isGeneratingSVG, setIsGeneratingSVG] = useState(false)
 
-  // Generate SVG for the component
-  const generateSVG = async () => {
+  useEffect(() => {
+    const generateSVG = async () => {
+      setIsGeneratingSVG(true)
+      
+      try {
+        const response = await fetch('/api/ai/generate-svg', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            componentType: componentData.type,
+            description: componentData.description,
+            targetAnchorId: `${componentData.type}_socket`
+          })
+        })
+        
+        const data = await response.json()
+        
+        if (data.success) {
+          setSvgPart(data.svgPart)
+        }
+      } catch (error) {
+        console.error('SVG generation failed:', error)
+      } finally {
+        setIsGeneratingSVG(false)
+      }
+    }
+
+    generateSVG()
+  }, [componentData])
+
+  const handleRegenerate = async () => {
     setIsGeneratingSVG(true)
     
     try {
@@ -43,10 +72,6 @@ export default function SVGPreview({ componentData, onApprove, onReject, onGener
       setIsGeneratingSVG(false)
     }
   }
-
-  useEffect(() => {
-    generateSVG()
-  }, [componentData])
 
   return (
     <motion.div
@@ -91,7 +116,7 @@ export default function SVGPreview({ componentData, onApprove, onReject, onGener
           <div className="text-center">
             <p className="text-steel-gray text-sm">Failed to generate SVG</p>
             <button
-              onClick={generateSVG}
+              onClick={handleRegenerate}
               className="mt-2 bg-neon-blue hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition-colors text-xs"
             >
               Try Again
