@@ -48,7 +48,7 @@ export default function AIPreview({ feature, position, onAccept, onReject, onGen
   // Auto-generate preview when component mounts
   useEffect(() => {
     generatePreview()
-  }, [feature])
+  }, [generatePreview])
 
   const getFeatureIcon = (featureType: string) => {
     switch (featureType) {

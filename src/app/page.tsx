@@ -227,7 +227,6 @@ export default function MechaCrewApp() {
     setSelectedFeature(null)
     setFeaturePosition(null)
     setCurrentWorkflow('text')
-    setCurrentComponentData(null)
     setShowCollaboration(false)
   }
 

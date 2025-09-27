@@ -54,7 +54,7 @@ export default function PublicCanvas({ sessionId }: PublicCanvasProps) {
     // Poll for updates every 3 seconds
     const interval = setInterval(fetchComponents, 3000)
     return () => clearInterval(interval)
-  }, [sessionId])
+  }, [sessionId, fetchComponents])
 
   const getComponentIcon = (type: string) => {
     switch (type) {
