@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 
 interface CanvasComponent {
@@ -31,11 +31,11 @@ export default function PublicCanvas({ sessionId }: PublicCanvasProps) {
   const [totalPower, setTotalPower] = useState(0)
   const [totalWeight, setTotalWeight] = useState(0)
 
-  const fetchComponents = async () => {
+  const fetchComponents = useCallback(async () => {
     try {
       const response = await fetch(`/api/canvas?sessionId=${sessionId}`)
       const data = await response.json()
-      
+
       if (data.success) {
         setComponents(data.components)
         setTotalPower(data.components.reduce((sum: number, comp: CanvasComponent) => sum + comp.power, 0))
@@ -46,7 +46,7 @@ export default function PublicCanvas({ sessionId }: PublicCanvasProps) {
       console.error('Error fetching components:', error)
       setIsLoading(false)
     }
-  }
+  }, [sessionId])
 
   useEffect(() => {
     fetchComponents()

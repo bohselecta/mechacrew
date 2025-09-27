@@ -1,4 +1,11 @@
+'use client'
+
 import { SignIn } from '@clerk/nextjs'
+import { Suspense } from 'react'
+
+function SignInForm() {
+  return <SignIn />
+}
 
 export default function SignInPage() {
   return (
@@ -12,7 +19,14 @@ export default function SignInPage() {
             Pilot Authentication Required
           </p>
         </div>
-        <SignIn />
+        <Suspense fallback={
+          <div className="text-center py-8">
+            <div className="animate-spin w-8 h-8 border-2 border-neon-blue border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p className="text-white">Loading authentication...</p>
+          </div>
+        }>
+          <SignInForm />
+        </Suspense>
       </div>
     </div>
   )

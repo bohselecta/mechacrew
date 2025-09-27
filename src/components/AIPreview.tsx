@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle, XCircle, RotateCcw } from 'lucide-react'
 
@@ -17,7 +17,7 @@ export default function AIPreview({ feature, position, onAccept, onReject, onGen
   const [previewComponent, setPreviewComponent] = useState<any>(null)
 
   // Generate component preview
-  const generatePreview = async () => {
+  const generatePreview = useCallback(async () => {
     setIsGenerating(true)
     
     try {
@@ -43,7 +43,7 @@ export default function AIPreview({ feature, position, onAccept, onReject, onGen
     } finally {
       setIsGenerating(false)
     }
-  }
+  }, [feature])
 
   // Auto-generate preview when component mounts
   useEffect(() => {
