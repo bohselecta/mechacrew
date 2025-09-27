@@ -3,16 +3,18 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { CheckCircle, XCircle, RotateCcw, Eye } from 'lucide-react'
+import { SvgPart } from '@/components/MechaBuilder/SvgPart'
+import type { MechaSvgPart } from '@/types/mecha-svg'
 
 interface SVGPreviewProps {
   componentData: any
-  onApprove: (component: any) => void
+  onApprove: (component: MechaSvgPart) => void
   onReject: () => void
   onGenerateNew: () => void
 }
 
 export default function SVGPreview({ componentData, onApprove, onReject, onGenerateNew }: SVGPreviewProps) {
-  const [svgContent, setSvgContent] = useState<string>('')
+  const [svgPart, setSvgPart] = useState<MechaSvgPart | null>(null)
   const [isGeneratingSVG, setIsGeneratingSVG] = useState(false)
 
   // Generate SVG for the component
@@ -24,26 +26,19 @@ export default function SVGPreview({ componentData, onApprove, onReject, onGener
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          componentData,
-          featureType: componentData.type,
-          description: componentData.description
+          componentType: componentData.type,
+          description: componentData.description,
+          targetAnchorId: `${componentData.type}_socket`
         })
       })
       
       const data = await response.json()
       
       if (data.success) {
-        setSvgContent(data.svg)
+        setSvgPart(data.svgPart)
       }
     } catch (error) {
       console.error('SVG generation failed:', error)
-      // Fallback SVG
-      setSvgContent(`
-        <svg width="200" height="200" viewBox="0 0 200 200">
-          <rect x="50" y="50" width="100" height="100" fill="${componentData.color}" stroke="#08B0D5" stroke-width="2"/>
-          <text x="100" y="110" text-anchor="middle" fill="white" font-size="12">${componentData.name}</text>
-        </svg>
-      `)
     } finally {
       setIsGeneratingSVG(false)
     }
@@ -88,11 +83,10 @@ export default function SVGPreview({ componentData, onApprove, onReject, onGener
               GENERATING SVG...
             </p>
           </div>
-        ) : svgContent ? (
-          <div 
-            className="svg-preview"
-            dangerouslySetInnerHTML={{ __html: svgContent }}
-          />
+        ) : svgPart ? (
+          <div className="svg-preview">
+            <SvgPart part={svgPart} className="w-48 h-48" />
+          </div>
         ) : (
           <div className="text-center">
             <p className="text-steel-gray text-sm">Failed to generate SVG</p>
@@ -109,16 +103,16 @@ export default function SVGPreview({ componentData, onApprove, onReject, onGener
       {/* Component Stats */}
       <div className="grid grid-cols-3 gap-2 text-xs mb-4">
         <div className="text-center">
-          <p className="text-neon-blue font-bold">{componentData.power}</p>
-          <p className="text-white text-xs">Power</p>
+          <p className="text-neon-blue font-bold">{svgPart?.powerWatts ? Math.round(svgPart.powerWatts / 1000) : componentData.power}</p>
+          <p className="text-white text-xs">Power (kW)</p>
         </div>
         <div className="text-center">
-          <p className="text-neon-blue font-bold">{componentData.durability}</p>
+          <p className="text-neon-blue font-bold">{svgPart?.durability || componentData.durability}</p>
           <p className="text-white text-xs">Durability</p>
         </div>
         <div className="text-center">
-          <p className="text-neon-blue font-bold">{componentData.weight}</p>
-          <p className="text-white text-xs">Weight</p>
+          <p className="text-neon-blue font-bold">{svgPart?.massKg ? Math.round(svgPart.massKg) : componentData.weight}</p>
+          <p className="text-white text-xs">Mass (kg)</p>
         </div>
       </div>
 
@@ -135,8 +129,9 @@ export default function SVGPreview({ componentData, onApprove, onReject, onGener
         
         <div className="flex space-x-3">
           <button
-            onClick={() => onApprove(componentData)}
+            onClick={() => svgPart && onApprove(svgPart)}
             className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded transition-colors flex items-center justify-center space-x-2"
+            disabled={!svgPart}
           >
             <CheckCircle className="w-4 h-4" />
             <span>APPROVE FOR VOTING</span>

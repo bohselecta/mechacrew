@@ -241,16 +241,22 @@ export default function MechaCrewApp() {
     // Component data is passed to SVG preview
   }
 
-  const handleSVGApproval = (component: any) => {
+  const handleSVGApproval = (svgPart: any) => {
     setCurrentWorkflow('voting')
-    // Send to voting system
+    // Send to voting system with SVG part data
     setPendingVote({
-      componentId: component.id,
+      componentId: svgPart.name + '-' + Date.now(),
       sessionId,
       userId,
-      componentData: component,
+      componentData: {
+        ...svgPart,
+        type: svgPart.componentType,
+        power: svgPart.powerWatts ? Math.round(svgPart.powerWatts / 1000) : 100,
+        durability: svgPart.durability || 85,
+        weight: svgPart.massKg ? Math.round(svgPart.massKg) : 50
+      },
       creatorName: `User_${userId.slice(-4)}`,
-      previewDescription: component.description
+      previewDescription: svgPart.name
     })
   }
 
