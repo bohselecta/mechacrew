@@ -15,7 +15,6 @@ export async function generateMechaSvgPart(args: {
     model: openai("gpt-4o-mini"),                  // TEMP: replace with grok-3 when wired
     // model: grok("grok-3"), // example when provider available
     temperature: 0.7,
-    maxTokens: 1200,
     prompt,
   });
 
