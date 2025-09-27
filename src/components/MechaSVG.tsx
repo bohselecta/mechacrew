@@ -7,9 +7,11 @@ interface MechaSVGProps {
   onFeatureSelect: (feature: string, position: { x: number, y: number }) => void
   selectedFeature?: string
   addedComponents: string[]
+  approvedComponents: {[key: string]: any}
+  isGuestMode: boolean
 }
 
-export default function MechaSVG({ onFeatureSelect, selectedFeature, addedComponents }: MechaSVGProps) {
+export default function MechaSVG({ onFeatureSelect, selectedFeature, addedComponents, approvedComponents, isGuestMode }: MechaSVGProps) {
   const [hoveredFeature, setHoveredFeature] = useState<string | null>(null)
 
   const features = [
@@ -40,6 +42,10 @@ export default function MechaSVG({ onFeatureSelect, selectedFeature, addedCompon
   ]
 
   const handleFeatureClick = (feature: any) => {
+    if (isGuestMode) {
+      // Guests can only view, not add components
+      return
+    }
     onFeatureSelect(feature.id, { x: feature.x, y: feature.y })
   }
 
@@ -96,7 +102,7 @@ export default function MechaSVG({ onFeatureSelect, selectedFeature, addedCompon
                 stroke="#08B0D5"
                 strokeWidth="1"
                 opacity={getFeatureOpacity(feature.id)}
-                className="cursor-pointer transition-all duration-200"
+                className={`transition-all duration-200 ${isGuestMode ? 'cursor-default' : 'cursor-pointer'}`}
                 onClick={() => handleFeatureClick(feature)}
                 onMouseEnter={() => setHoveredFeature(feature.id)}
                 onMouseLeave={() => setHoveredFeature(null)}
@@ -131,6 +137,52 @@ export default function MechaSVG({ onFeatureSelect, selectedFeature, addedCompon
           </motion.div>
         )}
         
+        {/* Guest Mode Indicator */}
+        {isGuestMode && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="absolute top-4 left-4 bg-gunmetal border-2 border-accent-yellow rounded-lg p-3 shadow-lg"
+          >
+            <p className="text-accent-yellow font-bold text-xs uppercase tracking-wider">
+              👁️ VIEW MODE
+            </p>
+            <p className="text-white text-xs mt-1">
+              Hover to see component details
+            </p>
+          </motion.div>
+        )}
+
+        {/* Hover Description Tooltip */}
+        {hoveredFeature && approvedComponents[hoveredFeature] && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="absolute top-4 right-4 bg-steel-gray border-2 border-neon-blue rounded-lg p-4 shadow-lg max-w-xs"
+          >
+            <h3 className="text-accent-yellow font-bold text-sm uppercase tracking-wider mb-2">
+              {approvedComponents[hoveredFeature].name}
+            </h3>
+            <p className="text-white text-xs mb-2">
+              {approvedComponents[hoveredFeature].description}
+            </p>
+            <div className="grid grid-cols-3 gap-2 text-xs">
+              <div className="text-center">
+                <p className="text-neon-blue font-bold">{approvedComponents[hoveredFeature].power}</p>
+                <p className="text-white text-xs">Power</p>
+              </div>
+              <div className="text-center">
+                <p className="text-neon-blue font-bold">{approvedComponents[hoveredFeature].durability}</p>
+                <p className="text-white text-xs">Durability</p>
+              </div>
+              <div className="text-center">
+                <p className="text-neon-blue font-bold">{approvedComponents[hoveredFeature].weight}</p>
+                <p className="text-white text-xs">Weight</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Selected Feature Info */}
         {selectedFeature && (
           <motion.div

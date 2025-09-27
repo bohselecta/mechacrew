@@ -63,6 +63,7 @@ export default function MechaCrewApp() {
   const [selectedFeature, setSelectedFeature] = useState<string | null>(null)
   const [featurePosition, setFeaturePosition] = useState<{ x: number, y: number } | null>(null)
   const [addedComponents, setAddedComponents] = useState<string[]>([])
+  const [approvedComponents, setApprovedComponents] = useState<{[key: string]: any}>({})
   const [showWelcome, setShowWelcome] = useState(true)
   const [isGuestMode, setIsGuestMode] = useState(false)
   const [currentWorkflow, setCurrentWorkflow] = useState<'text' | 'voting' | 'approved'>('text')
@@ -179,6 +180,15 @@ export default function MechaCrewApp() {
         const data = await response.json()
         if (data.success) {
           console.log('Component submitted to canvas!')
+          // Add to local state for immediate wireframe update
+          if (pendingVote?.componentData) {
+            const featureId = selectedFeature || 'unknown'
+            setAddedComponents(prev => [...prev, featureId])
+            setApprovedComponents(prev => ({
+              ...prev,
+              [featureId]: pendingVote.componentData
+            }))
+          }
           // Refresh canvas if it's open
           if (showCanvas) {
             // Canvas will auto-refresh via polling
@@ -333,6 +343,8 @@ export default function MechaCrewApp() {
             onFeatureSelect={handleFeatureSelect}
             selectedFeature={selectedFeature || undefined}
             addedComponents={addedComponents}
+            approvedComponents={approvedComponents}
+            isGuestMode={isGuestMode}
           />
           
           {/* Overlay Controls */}
@@ -402,9 +414,18 @@ export default function MechaCrewApp() {
                     <p className="text-white text-sm mb-4">Ready to add to your mecha</p>
                     <button
                       onClick={() => {
-                        setAddedComponents([...addedComponents, selectedFeature])
+                        // Add to mecha and reset workflow
+                        const featureId = selectedFeature || 'unknown'
+                        setAddedComponents([...addedComponents, featureId])
+                        if (pendingVote?.componentData) {
+                          setApprovedComponents(prev => ({
+                            ...prev,
+                            [featureId]: pendingVote.componentData
+                          }))
+                        }
                         setCurrentWorkflow('text')
                         setSelectedFeature(null)
+                        setPendingVote(null)
                       }}
                       className="mecha-button w-full"
                     >
