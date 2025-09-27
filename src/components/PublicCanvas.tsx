@@ -31,14 +31,6 @@ export default function PublicCanvas({ sessionId }: PublicCanvasProps) {
   const [totalPower, setTotalPower] = useState(0)
   const [totalWeight, setTotalWeight] = useState(0)
 
-  useEffect(() => {
-    fetchComponents()
-    
-    // Poll for updates every 3 seconds
-    const interval = setInterval(fetchComponents, 3000)
-    return () => clearInterval(interval)
-  }, [sessionId])
-
   const fetchComponents = async () => {
     try {
       const response = await fetch(`/api/canvas?sessionId=${sessionId}`)
@@ -55,6 +47,14 @@ export default function PublicCanvas({ sessionId }: PublicCanvasProps) {
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchComponents()
+    
+    // Poll for updates every 3 seconds
+    const interval = setInterval(fetchComponents, 3000)
+    return () => clearInterval(interval)
+  }, [sessionId])
 
   const getComponentIcon = (type: string) => {
     switch (type) {

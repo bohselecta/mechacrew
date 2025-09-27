@@ -10,7 +10,7 @@ interface VotingComponentProps {
   componentData: any
   creatorName: string
   previewDescription: string
-  onVote: (componentId: string, vote: 'approve' | 'reject') => void
+  onVote: (componentId: string, vote: 'approve' | 'reject' | 'submit' | 'improve') => void
   onClose: () => void
 }
 
