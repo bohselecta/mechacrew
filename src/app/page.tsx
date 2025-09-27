@@ -20,6 +20,8 @@ import PublicCanvas from '@/components/PublicCanvas'
 import LoadingScreen from '@/components/LoadingScreen'
 import MechaSVG from '@/components/MechaSVG'
 import AIPreview from '@/components/AIPreview'
+import WelcomeScreen from '@/components/WelcomeScreen'
+import SVGPreview from '@/components/SVGPreview'
 
 interface MechaComponent {
   id: string
@@ -62,6 +64,9 @@ export default function MechaCrewApp() {
   const [selectedFeature, setSelectedFeature] = useState<string | null>(null)
   const [featurePosition, setFeaturePosition] = useState<{ x: number, y: number } | null>(null)
   const [addedComponents, setAddedComponents] = useState<string[]>([])
+  const [showWelcome, setShowWelcome] = useState(true)
+  const [isGuestMode, setIsGuestMode] = useState(false)
+  const [currentWorkflow, setCurrentWorkflow] = useState<'text' | 'svg' | 'voting' | 'approved'>('text')
 
   // Initialize with demo components
   useEffect(() => {
@@ -220,8 +225,46 @@ export default function MechaCrewApp() {
     // The component will re-render and generate a new preview
   }
 
+  const handleAccountCreate = () => {
+    setShowWelcome(false)
+    setIsGuestMode(false)
+    // TODO: Implement account creation flow
+  }
+
+  const handleGuestView = () => {
+    setShowWelcome(false)
+    setIsGuestMode(true)
+  }
+
+  const handleTextApproval = (component: any) => {
+    setCurrentWorkflow('svg')
+    // Component data is passed to SVG preview
+  }
+
+  const handleSVGApproval = (component: any) => {
+    setCurrentWorkflow('voting')
+    // Send to voting system
+    setPendingVote({
+      componentId: component.id,
+      sessionId,
+      userId,
+      componentData: component,
+      creatorName: `User_${userId.slice(-4)}`,
+      previewDescription: component.description
+    })
+  }
+
+  const handleVotingApproval = (component: any) => {
+    setCurrentWorkflow('approved')
+    // Component is approved, ready to add to mecha
+  }
+
   if (!isLoaded) {
     return <LoadingScreen onComplete={() => setIsLoaded(true)} />
+  }
+
+  if (showWelcome) {
+    return <WelcomeScreen onAccountCreate={handleAccountCreate} onGuestView={handleGuestView} />
   }
 
   return (
@@ -303,30 +346,16 @@ export default function MechaCrewApp() {
               <span>AI ORCHESTRATOR</span>
             </button>
             
-            <button
-              onClick={toggleSimulation}
-              className={`mecha-button-secondary flex items-center space-x-2 ${
-                isSimulating ? 'animate-pulse-neon' : ''
-              }`}
-            >
-              {isSimulating ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-              <span>{isSimulating ? 'STOP' : 'SIMULATE'}</span>
-            </button>
-            
-            <button
-              onClick={resetMecha}
-              className="mecha-button-secondary flex items-center space-x-2"
-            >
-              <RotateCcw className="w-4 h-4" />
-              <span>RESET</span>
-            </button>
           </div>
           
           {/* Status Panel */}
           <div className="absolute bottom-4 left-4 mecha-panel p-4 min-w-[300px]">
             <h3 className="text-accent-yellow font-bold uppercase tracking-wider mb-2">
-              MECHA STATUS
+              LIVE MECHA STATUS
             </h3>
+            <p className="text-steel-gray text-xs mb-3">
+              Persistent database object • Updates in real-time
+            </p>
             <div className="space-y-2 text-white text-sm">
               <div className="flex justify-between">
                 <span>Components:</span>
@@ -382,13 +411,24 @@ export default function MechaCrewApp() {
               className="w-80 bg-steel-gray border-l-2 border-neon-blue h-full overflow-y-auto"
             >
               {selectedFeature && featurePosition ? (
-                <AIPreview
-                  feature={selectedFeature}
-                  position={featurePosition}
-                  onAccept={handleComponentAccept}
-                  onReject={handleComponentReject}
-                  onGenerateNew={handleGenerateNew}
-                />
+                currentWorkflow === 'text' ? (
+                  <AIPreview
+                    feature={selectedFeature}
+                    position={featurePosition}
+                    onAccept={handleTextApproval}
+                    onReject={handleComponentReject}
+                    onGenerateNew={handleGenerateNew}
+                  />
+                ) : currentWorkflow === 'svg' ? (
+                  <SVGPreview
+                    componentData={pendingVote?.componentData}
+                    onApprove={handleSVGApproval}
+                    onReject={handleComponentReject}
+                    onGenerateNew={handleGenerateNew}
+                  />
+                ) : (
+                  <CollaborationPanel users={users} />
+                )
               ) : (
                 <CollaborationPanel users={users} />
               )}
