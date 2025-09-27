@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const openai = process.env.OPENAI_API_KEY ? require('openai').default : null
+// XAI/Grok API configuration
+const XAI_API_KEY = process.env.XAI_API_KEY
+const XAI_API_URL = 'https://api.x.ai/v1/chat/completions'
 
 interface MechaComponent {
   id: string
@@ -53,29 +55,42 @@ export async function POST(request: NextRequest) {
     
     Make components realistic and balanced. Consider existing components for positioning.`
 
-    if (!openai) {
-      throw new Error('OpenAI not configured')
+    if (!XAI_API_KEY) {
+      throw new Error('XAI API key not configured')
     }
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: command }
-      ],
-      temperature: 0.7,
-      max_tokens: 1000,
+    // Call XAI/Grok API
+    const response = await fetch(XAI_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${XAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: command }
+        ],
+        model: "grok-4-latest",
+        stream: false,
+        temperature: 0.7
+      })
     })
 
-    const response = completion.choices[0]?.message?.content
-    if (!response) {
+    if (!response.ok) {
+      throw new Error(`XAI API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const aiResponse = data.choices[0]?.message?.content
+    if (!aiResponse) {
       throw new Error('No response from AI')
     }
 
     // Parse AI response
     let componentData
     try {
-      componentData = JSON.parse(response)
+      componentData = JSON.parse(aiResponse)
     } catch (error) {
       // Fallback if AI doesn't return valid JSON
       componentData = {

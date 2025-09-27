@@ -21,7 +21,6 @@
     "postcss": "^8.4.0",
     "@tailwindcss/typography": "^0.5.0",
     "framer-motion": "^10.16.0",
-    "openai": "^4.20.0",
     "@neondatabase/serverless": "^0.7.0",
     "@clerk/nextjs": "^4.27.0",
     "lucide-react": "^0.292.0",
