@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already voted
-    const existingVote = pendingComponent.votes.find(v => v.userId === userId)
+    const existingVote = pendingComponent.votes.find((v: Vote) => v.userId === userId)
     if (existingVote) {
       return NextResponse.json({ error: 'User already voted' }, { status: 400 })
     }
@@ -67,8 +67,8 @@ export async function POST(request: NextRequest) {
 
     // Check for majority
     const totalVotes = pendingComponent.votes.length
-    const approveVotes = pendingComponent.votes.filter(v => v.vote === 'approve').length
-    const rejectVotes = pendingComponent.votes.filter(v => v.vote === 'reject').length
+    const approveVotes = pendingComponent.votes.filter((v: Vote) => v.vote === 'approve').length
+    const rejectVotes = pendingComponent.votes.filter((v: Vote) => v.vote === 'reject').length
 
     // Determine if majority reached (need at least 2 votes and majority approval)
     if (totalVotes >= 2) {
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         sessionHistory.push({
           ...pendingComponent,
           approvedAt: new Date(),
-          approvedBy: pendingComponent.votes.filter(v => v.vote === 'approve').map(v => v.userId)
+          approvedBy: pendingComponent.votes.filter((v: Vote) => v.vote === 'approve').map((v: Vote) => v.userId)
         })
         componentHistory.set(sessionId, sessionHistory)
         
@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
 
     // Get pending votes for this session
     const pendingVotes = Array.from(activeVotes.values()).filter(
-      vote => vote.componentData.sessionId === sessionId
+      (vote: PendingComponent) => vote.componentData.sessionId === sessionId
     )
 
     // Get component history for this session
@@ -144,8 +144,8 @@ export async function GET(request: NextRequest) {
     // Get user's cooldown status
     const userCooldowns = new Map<string, Date>()
     const lastRejection = history
-      .filter(h => h.creatorId === userId && h.status === 'rejected')
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
+      .filter((h: any) => h.creatorId === userId && h.status === 'rejected')
+      .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
 
     const cooldownEnd = lastRejection ? 
       new Date(new Date(lastRejection.createdAt).getTime() + 5 * 60 * 1000) : null
