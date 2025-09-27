@@ -32,25 +32,25 @@ export default function ActivityFeed({ sessionId, userId }: ActivityFeedProps) {
     }
 
     // Fetch activity history
+    const fetchActivities = async () => {
+      try {
+        const response = await fetch(`/api/voting?sessionId=${sessionId}&userId=${userId}`)
+        const data = await response.json()
+        
+        if (data.success) {
+          setActivities(data.history || [])
+        }
+      } catch (error) {
+        console.error('Error fetching activities:', error)
+      }
+    }
+
     fetchActivities()
 
     // Poll for updates
     const interval = setInterval(fetchActivities, 5000)
     return () => clearInterval(interval)
-  }, [sessionId])
-
-  const fetchActivities = async () => {
-    try {
-      const response = await fetch(`/api/voting?sessionId=${sessionId}&userId=${userId}`)
-      const data = await response.json()
-      
-      if (data.success) {
-        setActivities(data.history || [])
-      }
-    } catch (error) {
-      console.error('Error fetching activities:', error)
-    }
-  }
+  }, [sessionId, userId])
 
   const markAsSeen = () => {
     setLastSeen(new Date())

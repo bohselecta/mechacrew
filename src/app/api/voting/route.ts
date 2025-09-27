@@ -12,13 +12,19 @@ interface VoteRequest {
   componentData: any
 }
 
+interface Vote {
+  userId: string
+  vote: 'approve' | 'reject'
+  timestamp: Date
+}
+
 interface PendingComponent {
   id: string
   componentData: any
   creatorId: string
   creatorName: string
   createdAt: Date
-  votes: { userId: string; vote: 'approve' | 'reject'; timestamp: Date }[]
+  votes: Vote[]
   status: 'pending' | 'approved' | 'rejected'
   previewImage?: string
 }
