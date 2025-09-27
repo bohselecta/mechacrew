@@ -17,6 +17,7 @@ import LogoAnimation from '@/components/LogoAnimation'
 import VotingComponent from '@/components/VotingComponent'
 import ActivityFeed from '@/components/ActivityFeed'
 import PublicCanvas from '@/components/PublicCanvas'
+import LoadingScreen from '@/components/LoadingScreen'
 
 interface MechaComponent {
   id: string
@@ -189,11 +190,7 @@ export default function MechaCrewApp() {
   }
 
   if (!isLoaded) {
-    return (
-      <div className="min-h-screen flex items-center justify-center blueprint-bg">
-        <LogoAnimation />
-      </div>
-    )
+    return <LoadingScreen onComplete={() => setIsLoaded(true)} />
   }
 
   return (
@@ -205,21 +202,13 @@ export default function MechaCrewApp() {
         className="absolute top-0 left-0 right-0 z-50 bg-steel-gray/90 backdrop-blur-md border-b-2 border-accent-yellow"
       >
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 flex items-center justify-center">
+          <div className="flex items-center">
+            <div className="w-24 h-24 flex items-center justify-center">
               <img 
                 src="/mecha-header-logo.png" 
                 alt="MechaCrew Logo" 
                 className="w-full h-full object-contain"
               />
-            </div>
-            <div>
-              <h1 className="text-2xl font-orbitron font-black text-white chrome-text">
-                MECHACREW
-              </h1>
-              <p className="text-neon-blue text-sm font-bold uppercase tracking-wider">
-                Collaborative AI Mecha Builder
-              </p>
             </div>
           </div>
           
