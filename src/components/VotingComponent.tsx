@@ -173,7 +173,33 @@ export default function VotingComponent({
             className="text-center"
           >
             <p className="text-green-400 font-bold text-lg">✅ Approved!</p>
-            <p className="text-white text-sm">Component added to mecha</p>
+            <p className="text-white text-sm mb-4">Component ready for submission</p>
+            
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  // Submit to mecha canvas
+                  onVote(componentId, 'submit')
+                  onClose()
+                }}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded transition-colors flex items-center justify-center space-x-2"
+              >
+                <span>🚀</span>
+                <span>READY TO SUBMIT</span>
+              </button>
+              
+              <button
+                onClick={() => {
+                  // Mark for improvement
+                  onVote(componentId, 'improve')
+                  onClose()
+                }}
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded transition-colors flex items-center justify-center space-x-2"
+              >
+                <span>🔧</span>
+                <span>IMPROVE SOME MORE</span>
+              </button>
+            </div>
           </motion.div>
         )}
 

@@ -16,6 +16,7 @@ import CollaborationPanel from '@/components/CollaborationPanel'
 import LogoAnimation from '@/components/LogoAnimation'
 import VotingComponent from '@/components/VotingComponent'
 import ActivityFeed from '@/components/ActivityFeed'
+import PublicCanvas from '@/components/PublicCanvas'
 
 interface MechaComponent {
   id: string
@@ -54,6 +55,7 @@ export default function MechaCrewApp() {
   const [pendingVote, setPendingVote] = useState<any>(null)
   const [sessionId] = useState('demo-session')
   const [userId] = useState(`user-${Math.random().toString(36).substr(2, 9)}`)
+  const [showCanvas, setShowCanvas] = useState(false)
 
   // Initialize with demo components
   useEffect(() => {
@@ -148,8 +150,38 @@ export default function MechaCrewApp() {
     setMechaComponents(prev => prev.filter(comp => comp.createdBy === 'system'))
   }
 
-  const handleVote = (componentId: string, vote: 'approve' | 'reject') => {
-    // Vote is handled by VotingComponent
+  const handleVote = async (componentId: string, vote: 'approve' | 'reject' | 'submit' | 'improve') => {
+    if (vote === 'submit') {
+      // Submit component to canvas
+      try {
+        const response = await fetch('/api/canvas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            componentId,
+            sessionId,
+            userId,
+            componentData: pendingVote?.componentData,
+            action: 'submit'
+          })
+        })
+        
+        const data = await response.json()
+        if (data.success) {
+          console.log('Component submitted to canvas!')
+          // Refresh canvas if it's open
+          if (showCanvas) {
+            // Canvas will auto-refresh via polling
+          }
+        }
+      } catch (error) {
+        console.error('Submission failed:', error)
+      }
+    } else if (vote === 'improve') {
+      // Mark for improvement - could trigger AI refinement
+      console.log('Component marked for improvement')
+    }
+    // Other votes are handled by VotingComponent
   }
 
   const handleVoteClose = () => {
@@ -206,6 +238,14 @@ export default function MechaCrewApp() {
             </div>
             
             <button
+              onClick={() => setShowCanvas(!showCanvas)}
+              className="mecha-button-secondary flex items-center space-x-2"
+            >
+              <span>🚀</span>
+              <span>{showCanvas ? 'HIDE CANVAS' : 'VIEW CANVAS'}</span>
+            </button>
+            
+            <button
               onClick={() => setShowCollaboration(!showCollaboration)}
               className="mecha-button-secondary flex items-center space-x-2"
             >
@@ -218,8 +258,15 @@ export default function MechaCrewApp() {
 
       {/* Main Content */}
       <div className="pt-20 h-screen flex">
+        {/* Public Canvas */}
+        {showCanvas && (
+          <div className="w-1/3 bg-gunmetal border-r-2 border-neon-blue p-4 overflow-y-auto">
+            <PublicCanvas sessionId={sessionId} />
+          </div>
+        )}
+        
         {/* 3D Builder Placeholder */}
-        <div className="flex-1 relative">
+        <div className={`${showCanvas ? 'flex-2' : 'flex-1'} relative`}>
           <div className="absolute inset-0 bg-gradient-to-br from-steel-gray to-gunmetal flex items-center justify-center">
             <div className="text-center space-y-8">
               {/* Hero Logo */}
