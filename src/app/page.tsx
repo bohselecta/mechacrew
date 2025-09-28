@@ -11,16 +11,9 @@ import {
   Wifi,
   WifiOff
 } from 'lucide-react'
-import AIPanel from '@/components/AIPanel'
-import CollaborationPanel from '@/components/CollaborationPanel'
-import LogoAnimation from '@/components/LogoAnimation'
-import VotingComponent from '@/components/VotingComponent'
-import ActivityFeed from '@/components/ActivityFeed'
-import PublicCanvas from '@/components/PublicCanvas'
-import LoadingScreen from '@/components/LoadingScreen'
 import MechaSVG from '@/components/MechaSVG'
 import AIPreview from '@/components/AIPreview'
-import WelcomeScreen from '@/components/WelcomeScreen'
+import VotingComponent from '@/components/VotingComponent'
 
 interface MechaComponent {
   id: string
@@ -49,23 +42,16 @@ interface User {
 
 export default function MechaCrewApp() {
   const [isLoaded, setIsLoaded] = useState(true)
-  const [showAIPanel, setShowAIPanel] = useState(false)
-  const [showCollaboration, setShowCollaboration] = useState(false)
-  const [isSimulating, setIsSimulating] = useState(false)
-  const [mechaComponents, setMechaComponents] = useState<MechaComponent[]>([])
-  const [users, setUsers] = useState<User[]>([])
-  const [isConnected, setIsConnected] = useState(false)
-  const [isGenerating, setIsGenerating] = useState(false)
   const [pendingVote, setPendingVote] = useState<any>(null)
   const [sessionId] = useState('demo-session')
-  const [userId] = useState(`user-${Math.random().toString(36).substr(2, 9)}`)
-  const [showCanvas, setShowCanvas] = useState(false)
   const [selectedFeature, setSelectedFeature] = useState<string | null>(null)
   const [featurePosition, setFeaturePosition] = useState<{ x: number, y: number } | null>(null)
   const [addedComponents, setAddedComponents] = useState<string[]>([])
   const [approvedComponents, setApprovedComponents] = useState<{[key: string]: any}>({})
   const [showWelcome, setShowWelcome] = useState(true)
-  const [isGuestMode, setIsGuestMode] = useState(false)
+  const [username, setUsername] = useState('')
+  const [isJoined, setIsJoined] = useState(false)
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([])
   const [currentWorkflow, setCurrentWorkflow] = useState<'text' | 'voting' | 'approved'>('text')
 
   // Initialize with demo components
@@ -235,35 +221,49 @@ export default function MechaCrewApp() {
     // The component will re-render and generate a new preview
   }
 
-  const handleAccountCreate = () => {
-    setShowWelcome(false)
-    setIsGuestMode(false)
-    // Clerk will handle the sign-in flow
-    window.location.href = '/sign-in'
-  }
-
-  const handleGuestView = () => {
-    setShowWelcome(false)
-    setIsGuestMode(true)
+  const handleJoinCollaboration = () => {
+    if (username.trim()) {
+      setIsJoined(true)
+      setShowWelcome(false)
+      // Add user to online list
+      setOnlineUsers(prev => [...prev, username.trim()])
+    }
   }
 
   const handleTextApproval = (component: any) => {
-    setCurrentWorkflow('voting')
-    // Send directly to voting system - skip SVG complexity
-    setPendingVote({
-      componentId: (component.name || 'component') + '-' + Date.now(),
-      sessionId,
-      userId,
-      componentData: {
-        ...component,
-        type: component.type || 'weapon',
-        power: component.power || 100,
-        durability: component.durability || 85,
-        weight: component.weight || 50
-      },
-      creatorName: `User_${userId.slice(-4)}`,
-      previewDescription: component.name || 'AI Generated Component'
-    })
+    // If only one user online, add directly. If multiple users, require voting
+    if (onlineUsers.length <= 1) {
+      // Direct add - no voting needed
+      const featureId = selectedFeature || 'unknown'
+      setAddedComponents(prev => [...prev, featureId])
+      setApprovedComponents(prev => ({
+        ...prev,
+        [featureId]: {
+          ...component,
+          addedBy: username,
+          addedAt: new Date().toLocaleTimeString()
+        }
+      }))
+      setCurrentWorkflow('text')
+      setSelectedFeature(null)
+    } else {
+      // Multiple users - require voting
+      setCurrentWorkflow('voting')
+      setPendingVote({
+        componentId: (component.name || 'component') + '-' + Date.now(),
+        sessionId,
+        userId: username,
+        componentData: {
+          ...component,
+          type: component.type || 'weapon',
+          power: component.power || 100,
+          durability: component.durability || 85,
+          weight: component.weight || 50
+        },
+        creatorName: username,
+        previewDescription: component.name || 'AI Generated Component'
+      })
+    }
   }
 
   const handleVotingApproval = (component: any) => {
@@ -272,7 +272,41 @@ export default function MechaCrewApp() {
   }
 
   if (showWelcome) {
-    return <WelcomeScreen onAccountCreate={handleAccountCreate} onGuestView={handleGuestView} />
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center blueprint-bg text-white p-4">
+        <div className="mecha-panel p-8 max-w-md w-full text-center">
+          <img src="/MC-Logo.png" alt="MechaCrew Logo" className="w-48 h-48 mx-auto mb-6 object-contain" />
+          <h1 className="text-4xl font-orbitron font-black text-white chrome-text mb-4">
+            JOIN COLLABORATION
+          </h1>
+          <p className="text-neon-blue text-lg font-bold uppercase tracking-wider mb-8">
+            Democratic AI-Orchestrated Creation
+          </p>
+          
+          <div className="space-y-4">
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your name..."
+              className="mecha-input w-full text-center"
+              onKeyPress={(e) => e.key === 'Enter' && handleJoinCollaboration()}
+            />
+            <button
+              onClick={handleJoinCollaboration}
+              className="mecha-button w-full"
+              disabled={!username.trim()}
+            >
+              JOIN THE CREATION
+            </button>
+          </div>
+          
+          <p className="text-steel-gray text-sm mt-6">
+            Close your browser when done collaborating
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -329,117 +363,100 @@ export default function MechaCrewApp() {
 
       {/* Main Content */}
       <div className="pt-20 h-screen flex">
-        {/* Public Canvas */}
-        {showCanvas && (
-          <div className="w-1/3 bg-gunmetal border-r-2 border-neon-blue p-4 overflow-y-auto">
-            <PublicCanvas sessionId={sessionId} />
-          </div>
-        )}
-        
         {/* Mecha Builder */}
-        <div className={`${showCanvas ? 'flex-2' : 'flex-1'} relative`}>
+        <div className="flex-1 relative">
           <MechaSVG 
             onFeatureSelect={handleFeatureSelect}
             selectedFeature={selectedFeature || undefined}
             addedComponents={addedComponents}
             approvedComponents={approvedComponents}
-            isGuestMode={isGuestMode}
+            isGuestMode={false}
           />
           
-          {/* Overlay Controls */}
-          <div className="absolute top-4 left-4 space-y-2">
-            <button
-              onClick={() => setShowAIPanel(!showAIPanel)}
-              className="mecha-button flex items-center space-x-2"
-            >
-              <Zap className="w-4 h-4" />
-              <span>AI ORCHESTRATOR</span>
-            </button>
-            
+          {/* Online Users Indicator */}
+          <div className="absolute top-4 left-4 bg-gunmetal border-2 border-accent-yellow rounded-lg p-3">
+            <p className="text-accent-yellow font-bold text-xs uppercase tracking-wider">
+              ONLINE: {onlineUsers.length}
+            </p>
+            <div className="text-white text-xs mt-1">
+              {onlineUsers.map((user, index) => (
+                <span key={index}>
+                  {user}{index < onlineUsers.length - 1 ? ', ' : ''}
+                </span>
+              ))}
+            </div>
           </div>
-          
         </div>
 
-        {/* AI Panel */}
-        <AnimatePresence>
-          {showAIPanel && (
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              className="w-96 bg-steel-gray border-l-2 border-accent-yellow h-full overflow-y-auto"
-            >
-              <AIPanel 
-                onCommand={handleAICommand}
-                isGenerating={isGenerating}
-                components={mechaComponents}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Collaboration Panel */}
-        <AnimatePresence>
-          {showCollaboration && (
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              className="w-80 bg-steel-gray border-l-2 border-neon-blue h-full overflow-y-auto"
-            >
-              {selectedFeature && featurePosition ? (
-                currentWorkflow === 'text' ? (
-                  <AIPreview
-                    feature={selectedFeature}
-                    position={featurePosition}
-                    onAccept={handleTextApproval}
-                    onReject={handleComponentReject}
-                    onGenerateNew={handleGenerateNew}
-                  />
-                ) : currentWorkflow === 'voting' && pendingVote ? (
-                  <VotingComponent
-                    componentId={pendingVote.componentId}
-                    sessionId={pendingVote.sessionId}
-                    userId={pendingVote.userId}
-                    componentData={pendingVote.componentData}
-                    creatorName={pendingVote.creatorName}
-                    previewDescription={pendingVote.previewDescription}
-                    onVote={handleVote}
-                    onClose={() => setPendingVote(null)}
-                  />
-                ) : currentWorkflow === 'approved' ? (
-                  <div className="mecha-panel p-6 text-center">
-                    <h3 className="text-accent-yellow font-bold text-lg mb-4">✅ COMPONENT APPROVED!</h3>
-                    <p className="text-white text-sm mb-4">Ready to add to your mecha</p>
-                    <button
-                      onClick={() => {
-                        // Add to mecha and reset workflow
-                        const featureId = selectedFeature || 'unknown'
-                        setAddedComponents([...addedComponents, featureId])
-                        if (pendingVote?.componentData) {
-                          setApprovedComponents(prev => ({
-                            ...prev,
-                            [featureId]: pendingVote.componentData
-                          }))
+        <div className="w-96 bg-steel-gray border-l-2 border-neon-blue h-full overflow-y-auto">
+          {selectedFeature && featurePosition ? (
+            currentWorkflow === 'text' ? (
+              <AIPreview
+                feature={selectedFeature}
+                position={featurePosition}
+                onAccept={handleTextApproval}
+                onReject={handleComponentReject}
+                onGenerateNew={handleGenerateNew}
+              />
+            ) : currentWorkflow === 'voting' && pendingVote ? (
+              <VotingComponent
+                componentId={pendingVote.componentId}
+                sessionId={pendingVote.sessionId}
+                userId={pendingVote.userId}
+                componentData={pendingVote.componentData}
+                creatorName={pendingVote.creatorName}
+                previewDescription={pendingVote.previewDescription}
+                onVote={handleVote}
+                onClose={() => setPendingVote(null)}
+              />
+            ) : currentWorkflow === 'approved' ? (
+              <div className="mecha-panel p-6 text-center">
+                <h3 className="text-accent-yellow font-bold text-lg mb-4">✅ COMPONENT APPROVED!</h3>
+                <p className="text-white text-sm mb-4">Ready to add to mecha</p>
+                <button
+                  onClick={() => {
+                    const featureId = selectedFeature || 'unknown'
+                    setAddedComponents([...addedComponents, featureId])
+                    if (pendingVote?.componentData) {
+                      setApprovedComponents(prev => ({
+                        ...prev,
+                        [featureId]: {
+                          ...pendingVote.componentData,
+                          addedBy: username,
+                          addedAt: new Date().toLocaleTimeString()
                         }
-                        setCurrentWorkflow('text')
-                        setSelectedFeature(null)
-                        setPendingVote(null)
-                      }}
-                      className="mecha-button w-full"
-                    >
-                      ADD TO MECHA
-                    </button>
-                  </div>
+                      }))
+                    }
+                    setCurrentWorkflow('text')
+                    setSelectedFeature(null)
+                    setPendingVote(null)
+                  }}
+                  className="mecha-button w-full"
+                >
+                  ADD TO MECHA
+                </button>
+              </div>
+            ) : (
+              <div className="p-6 text-center">
+                <h3 className="text-neon-blue font-bold text-lg mb-4">SELECT A PART</h3>
+                <p className="text-white text-sm">Click on the mecha to add components</p>
+              </div>
+            )
+          ) : (
+            <div className="p-6 text-center">
+              <h3 className="text-neon-blue font-bold text-lg mb-4">COLLABORATION ROOM</h3>
+              <p className="text-white text-sm mb-4">Click on the mecha to add components</p>
+              <div className="text-xs text-steel-gray">
+                {onlineUsers.length <= 1 ? (
+                  <p>✨ Solo mode - add parts directly</p>
                 ) : (
-                  <CollaborationPanel users={users} />
-                )
-              ) : (
-                <CollaborationPanel users={users} />
-              )}
-            </motion.div>
+                  <p>🗳️ Multi-user mode - voting required</p>
+                )}
+              </div>
+            </div>
           )}
-        </AnimatePresence>
+        </div>
       </div>
 
       {/* Voting Modal */}
