@@ -110,6 +110,17 @@ export default function MechaCrewApp() {
   const sendChatMessage = async () => {
     if (!newMessage.trim() || !username) return
     
+    // Add message to local state immediately for instant feedback
+    const tempMessage = {
+      id: `temp-${Date.now()}`,
+      user_name: username,
+      message: newMessage.trim(),
+      message_type: 'chat',
+      created_at: new Date().toISOString()
+    }
+    setChatMessages(prev => [...prev, tempMessage])
+    setNewMessage('')
+    
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -123,14 +134,22 @@ export default function MechaCrewApp() {
         })
       })
       
-      const data = await response.json()
-      
-      if (data.success) {
-        setChatMessages(prev => [...prev, data.message])
-        setNewMessage('')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          // Replace temp message with real one
+          setChatMessages(prev => prev.map(msg => 
+            msg.id === tempMessage.id ? data.message : msg
+          ))
+        }
+      } else {
+        const errorData = await response.json()
+        console.error('Chat API error:', errorData)
+        // Keep the temp message since database failed
       }
     } catch (error) {
       console.error('Failed to send message:', error)
+      // Keep the temp message since API failed
     }
   }
 
@@ -300,6 +319,16 @@ export default function MechaCrewApp() {
       setShowWelcome(false)
       // Add user to online list
       setOnlineUsers(prev => [...prev, username.trim()])
+      
+      // Add welcome message to chat
+      const welcomeMessage = {
+        id: `welcome-${Date.now()}`,
+        user_name: 'System',
+        message: `${username} joined the mecha construction crew!`,
+        message_type: 'action',
+        created_at: new Date().toISOString()
+      }
+      setChatMessages(prev => [...prev, welcomeMessage])
     }
   }
 
@@ -603,16 +632,22 @@ export default function MechaCrewApp() {
           <div className="border-t-2 border-neon-blue mt-auto">
             <div className="p-4">
               <h4 className="text-accent-yellow font-bold text-sm uppercase tracking-wider mb-3">
-                PILOT CHAT
+                PILOT CHAT ({chatMessages.length} messages)
               </h4>
               
               {/* Chat Messages */}
-              <div className="h-32 overflow-y-auto mb-3 space-y-1">
-                {chatMessages.slice(-10).map((msg, index) => (
-                  <div key={index} className={`text-xs ${msg.message_type === 'action' ? 'text-neon-blue' : 'text-white'}`}>
-                    <span className="font-bold text-accent-yellow">{msg.user_name}:</span> {msg.message}
+              <div className="h-48 overflow-y-auto mb-3 space-y-1 bg-gunmetal/50 p-2 rounded border border-neon-blue/30">
+                {chatMessages.length === 0 ? (
+                  <div className="text-center text-steel-gray text-xs py-4">
+                    No messages yet. Be the first to chat!
                   </div>
-                ))}
+                ) : (
+                  chatMessages.map((msg, index) => (
+                    <div key={index} className={`text-xs ${msg.message_type === 'action' ? 'text-neon-blue' : 'text-white'}`}>
+                      <span className="font-bold text-accent-yellow">{msg.user_name}:</span> {msg.message}
+                    </div>
+                  ))
+                )}
               </div>
               
               {/* Chat Input */}
@@ -632,6 +667,11 @@ export default function MechaCrewApp() {
                 >
                   SEND
                 </button>
+              </div>
+              
+              {/* Debug Info */}
+              <div className="text-xs text-steel-gray mt-2">
+                Session: {sessionId} | User: {username}
               </div>
             </div>
           </div>
