@@ -114,9 +114,6 @@ export default function MechaCrewApp() {
     }
   }
 
-  const toggleSimulation = () => {
-    setIsSimulating(!isSimulating)
-  }
 
   const handleVote = async (componentId: string, vote: 'approve' | 'reject' | 'submit' | 'improve') => {
     if (vote === 'submit') {
