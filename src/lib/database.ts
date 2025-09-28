@@ -84,6 +84,10 @@ export class DatabaseService {
   }
 
   static async getSession(sessionId: string): Promise<MechaSession | null> {
+    if (!sql) {
+      return null
+    }
+    
     const result = await sql`
       SELECT * FROM mecha_sessions WHERE id = ${sessionId}
     `
@@ -91,6 +95,10 @@ export class DatabaseService {
   }
 
   static async updateSession(sessionId: string, updates: Partial<MechaSession>): Promise<MechaSession | null> {
+    if (!sql) {
+      return null
+    }
+    
     const result = await sql`
       UPDATE mecha_sessions 
       SET 
@@ -107,6 +115,10 @@ export class DatabaseService {
   }
 
   static async deleteSession(sessionId: string): Promise<boolean> {
+    if (!sql) {
+      return false
+    }
+    
     const result = await sql`
       DELETE FROM mecha_sessions WHERE id = ${sessionId}
     `
@@ -114,6 +126,10 @@ export class DatabaseService {
   }
 
   static async getPublicSessions(limit: number = 50): Promise<MechaSession[]> {
+    if (!sql) {
+      return []
+    }
+    
     const result = await sql`
       SELECT * FROM mecha_sessions 
       WHERE is_public = true 
@@ -159,6 +175,10 @@ export class DatabaseService {
   }
 
   static async deleteComponent(componentId: string): Promise<boolean> {
+    if (!sql) {
+      return false
+    }
+    
     const result = await sql`
       DELETE FROM mecha_components WHERE id = ${componentId}
     `
