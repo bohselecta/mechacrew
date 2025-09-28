@@ -187,6 +187,10 @@ export class DatabaseService {
 
   // User session operations
   static async joinSession(userSession: Omit<UserSession, 'created_at'>): Promise<UserSession> {
+    if (!sql) {
+      throw new Error('Database connection not available')
+    }
+    
     const result = await sql`
       INSERT INTO user_sessions (id, session_id, user_id, user_name, user_color, position, is_active, last_seen)
       VALUES (
@@ -202,6 +206,10 @@ export class DatabaseService {
   }
 
   static async leaveSession(userSessionId: string): Promise<boolean> {
+    if (!sql) {
+      return false
+    }
+    
     const result = await sql`
       UPDATE user_sessions 
       SET is_active = false, last_seen = NOW()
@@ -211,6 +219,10 @@ export class DatabaseService {
   }
 
   static async updateUserPosition(userSessionId: string, position: [number, number, number]): Promise<boolean> {
+    if (!sql) {
+      return false
+    }
+    
     const result = await sql`
       UPDATE user_sessions 
       SET position = ${JSON.stringify(position)}, last_seen = NOW()
@@ -220,6 +232,10 @@ export class DatabaseService {
   }
 
   static async getActiveUsers(sessionId: string): Promise<UserSession[]> {
+    if (!sql) {
+      return []
+    }
+    
     const result = await sql`
       SELECT * FROM user_sessions 
       WHERE session_id = ${sessionId} AND is_active = true
@@ -247,6 +263,10 @@ export class DatabaseService {
       return []
     }
     
+    if (!sql) {
+      return []
+    }
+    
     const result = await sql`
       SELECT * FROM collaboration_messages 
       WHERE session_id = ${sessionId}
@@ -258,6 +278,10 @@ export class DatabaseService {
 
   // AI generation tracking
   static async logAIGeneration(generation: Omit<AIGeneration, 'created_at'>): Promise<AIGeneration> {
+    if (!sql) {
+      throw new Error('Database connection not available')
+    }
+    
     const result = await sql`
       INSERT INTO ai_generations (id, session_id, user_id, prompt, response, component_id, tokens_used)
       VALUES (
@@ -270,6 +294,10 @@ export class DatabaseService {
   }
 
   static async getSessionAIGenerations(sessionId: string): Promise<AIGeneration[]> {
+    if (!sql) {
+      return []
+    }
+    
     const result = await sql`
       SELECT * FROM ai_generations 
       WHERE session_id = ${sessionId}
@@ -280,6 +308,10 @@ export class DatabaseService {
 
   // Cleanup operations
   static async cleanupInactiveUsers(): Promise<number> {
+    if (!sql) {
+      return 0
+    }
+    
     const result = await sql`
       UPDATE user_sessions 
       SET is_active = false 
@@ -289,6 +321,10 @@ export class DatabaseService {
   }
 
   static async getSessionStats(sessionId: string): Promise<any> {
+    if (!sql) {
+      return { components: 0, users: 0, messages: 0 }
+    }
+    
     const result = await sql`
       SELECT * FROM session_stats WHERE id = ${sessionId}
     `
