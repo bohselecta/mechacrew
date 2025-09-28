@@ -99,7 +99,7 @@ export default function AIPreview({ feature, position, onAccept, onReject, onGen
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gunmetal border-2 border-neon-blue rounded-lg p-6 shadow-2xl"
+      className="bg-gunmetal border-2 border-neon-blue rounded-lg p-6 shadow-2xl mt-4"
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-neon-blue font-bold text-lg uppercase tracking-wider">
