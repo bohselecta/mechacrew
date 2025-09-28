@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Zap, 
@@ -55,13 +55,110 @@ export default function MechaCrewApp() {
   const [currentWorkflow, setCurrentWorkflow] = useState<'text' | 'voting' | 'approved'>('text')
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [chatMessages, setChatMessages] = useState<any[]>([])
+  const [newMessage, setNewMessage] = useState('')
 
-  // Initialize online users with current user
-  useEffect(() => {
-    if (isJoined && username) {
-      setOnlineUsers([username])
+  const loadExistingComponents = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/canvas?sessionId=${sessionId}`)
+      const data = await response.json()
+      
+      if (data.success && data.components) {
+        // Convert database components to our format
+        const components: {[key: string]: any} = {}
+        const addedFeatures: string[] = []
+        
+        data.components.forEach((comp: any) => {
+          const feature = comp.metadata?.feature || 'unknown'
+          components[feature] = {
+            ...comp,
+            addedBy: comp.created_by,
+            addedAt: new Date(comp.created_at).toLocaleTimeString()
+          }
+          addedFeatures.push(feature)
+        })
+        
+        setApprovedComponents(components)
+        setAddedComponents(addedFeatures)
+      }
+    } catch (error) {
+      console.error('Failed to load existing components:', error)
     }
-  }, [isJoined, username])
+  }, [sessionId])
+
+  const loadChatMessages = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/chat?sessionId=${sessionId}`)
+      const data = await response.json()
+      
+      if (data.success && data.messages) {
+        setChatMessages(data.messages)
+      }
+    } catch (error) {
+      console.error('Failed to load chat messages:', error)
+    }
+  }, [sessionId])
+
+  // Load existing components and chat messages when user joins
+  useEffect(() => {
+    if (isJoined && sessionId) {
+      loadExistingComponents()
+      loadChatMessages()
+    }
+  }, [isJoined, sessionId, loadExistingComponents, loadChatMessages])
+
+  const sendChatMessage = async () => {
+    if (!newMessage.trim() || !username) return
+    
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          userId: username,
+          userName: username,
+          message: newMessage.trim(),
+          messageType: 'chat'
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        setChatMessages(prev => [...prev, data.message])
+        setNewMessage('')
+      }
+    } catch (error) {
+      console.error('Failed to send message:', error)
+    }
+  }
+
+  const addActionMessage = async (action: string) => {
+    if (!username) return
+    
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          userId: username,
+          userName: username,
+          message: action,
+          messageType: 'action'
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        setChatMessages(prev => [...prev, data.message])
+      }
+    } catch (error) {
+      console.error('Failed to send action message:', error)
+    }
+  }
 
   const handleAICommand = async (command: string) => {
     setIsGenerating(true)
@@ -142,6 +239,9 @@ export default function MechaCrewApp() {
               ...prev,
               [featureId]: pendingVote.componentData
             }))
+            
+            // Add action message
+            await addActionMessage(`Added ${pendingVote.componentData.name || 'component'} to ${featureId}`)
           }
         }
       } catch (error) {
@@ -199,22 +299,45 @@ export default function MechaCrewApp() {
     }
   }
 
-  const handleTextApproval = (component: any) => {
+  const handleTextApproval = async (component: any) => {
     try {
       setError(null)
       // If only one user online, add directly. If multiple users, require voting
       if (onlineUsers.length <= 1) {
         // Direct add - no voting needed
         const featureId = selectedFeature || 'unknown'
-        setAddedComponents(prev => [...prev, featureId])
-        setApprovedComponents(prev => ({
-          ...prev,
-          [featureId]: {
-            ...component,
-            addedBy: username,
-            addedAt: new Date().toLocaleTimeString()
-          }
-        }))
+        
+        // Save to database
+        const response = await fetch('/api/canvas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            componentId: `component-${Date.now()}`,
+            sessionId,
+            userId: username,
+            componentData: {
+              ...component,
+              feature: featureId
+            },
+            action: 'submit'
+          })
+        })
+        
+        if (response.ok) {
+          setAddedComponents(prev => [...prev, featureId])
+          setApprovedComponents(prev => ({
+            ...prev,
+            [featureId]: {
+              ...component,
+              addedBy: username,
+              addedAt: new Date().toLocaleTimeString()
+            }
+          }))
+          
+          // Add action message
+          await addActionMessage(`Added ${component.name || 'component'} to ${featureId}`)
+        }
+        
         setCurrentWorkflow('text')
         setSelectedFeature(null)
       } else {
@@ -438,6 +561,43 @@ export default function MechaCrewApp() {
               )}
             </div>
           )}
+          
+          {/* Chat System */}
+          <div className="border-t-2 border-neon-blue mt-auto">
+            <div className="p-4">
+              <h4 className="text-accent-yellow font-bold text-sm uppercase tracking-wider mb-3">
+                PILOT CHAT
+              </h4>
+              
+              {/* Chat Messages */}
+              <div className="h-32 overflow-y-auto mb-3 space-y-1">
+                {chatMessages.slice(-10).map((msg, index) => (
+                  <div key={index} className={`text-xs ${msg.message_type === 'action' ? 'text-neon-blue' : 'text-white'}`}>
+                    <span className="font-bold text-accent-yellow">{msg.user_name}:</span> {msg.message}
+                  </div>
+                ))}
+              </div>
+              
+              {/* Chat Input */}
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type message..."
+                  className="flex-1 mecha-input text-xs"
+                  onKeyPress={(e) => e.key === 'Enter' && sendChatMessage()}
+                />
+                <button
+                  onClick={sendChatMessage}
+                  className="mecha-button text-xs px-3"
+                  disabled={!newMessage.trim()}
+                >
+                  SEND
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

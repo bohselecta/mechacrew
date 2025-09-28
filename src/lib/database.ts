@@ -1,6 +1,7 @@
 import { neon } from '@neondatabase/serverless'
 
-const sql = neon(process.env.NEON_DATABASE_URL!)
+// Only initialize if database URL is available
+const sql = process.env.NEON_DATABASE_URL ? neon(process.env.NEON_DATABASE_URL) : null
 
 export interface MechaSession {
   id: string
@@ -70,6 +71,10 @@ export interface AIGeneration {
 export class DatabaseService {
   // Session operations
   static async createSession(session: Omit<MechaSession, 'created_at' | 'updated_at'>): Promise<MechaSession> {
+    if (!sql) {
+      throw new Error('Database connection not available')
+    }
+    
     const result = await sql`
       INSERT INTO mecha_sessions (id, name, description, components, is_public, created_by, session_data)
       VALUES (${session.id}, ${session.name}, ${session.description}, ${JSON.stringify(session.components)}, ${session.is_public}, ${session.created_by}, ${JSON.stringify(session.session_data)})
@@ -120,6 +125,10 @@ export class DatabaseService {
 
   // Component operations
   static async createComponent(component: Omit<MechaComponent, 'created_at'>): Promise<MechaComponent> {
+    if (!sql) {
+      throw new Error('Database connection not available')
+    }
+    
     const result = await sql`
       INSERT INTO mecha_components (
         id, session_id, type, name, description, position, rotation, scale,
@@ -137,6 +146,10 @@ export class DatabaseService {
   }
 
   static async getSessionComponents(sessionId: string): Promise<MechaComponent[]> {
+    if (!sql) {
+      return []
+    }
+    
     const result = await sql`
       SELECT * FROM mecha_components 
       WHERE session_id = ${sessionId}
@@ -197,6 +210,10 @@ export class DatabaseService {
 
   // Collaboration message operations
   static async addMessage(message: Omit<CollaborationMessage, 'created_at'>): Promise<CollaborationMessage> {
+    if (!sql) {
+      throw new Error('Database connection not available')
+    }
+    
     const result = await sql`
       INSERT INTO collaboration_messages (id, session_id, user_id, user_name, message, message_type)
       VALUES (${message.id}, ${message.session_id}, ${message.user_id}, ${message.user_name}, ${message.message}, ${message.message_type})
@@ -206,6 +223,10 @@ export class DatabaseService {
   }
 
   static async getSessionMessages(sessionId: string, limit: number = 100): Promise<CollaborationMessage[]> {
+    if (!sql) {
+      return []
+    }
+    
     const result = await sql`
       SELECT * FROM collaboration_messages 
       WHERE session_id = ${sessionId}

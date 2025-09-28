@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-// In-memory storage for submitted components (in production, use database)
-const submittedComponents = new Map<string, any[]>()
+import { DatabaseService } from '@/lib/database'
 
 interface SubmitRequest {
   componentId: string
@@ -19,27 +17,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Get existing components for this session
-    const sessionComponents = submittedComponents.get(sessionId) || []
-
     if (action === 'submit') {
-      // Add component to mecha canvas
-      const submittedComponent = {
-        ...componentData,
+      // Save component to database
+      const component = {
         id: componentId,
-        submittedAt: new Date(),
-        submittedBy: userId,
-        status: 'active'
+        session_id: sessionId,
+        type: componentData.type || 'weapon',
+        name: componentData.name || 'AI Generated Component',
+        description: componentData.description || `Added by ${userId}`,
+        position: componentData.position || [0, 0, 0],
+        rotation: componentData.rotation || [0, 0, 0],
+        scale: componentData.scale || [1, 1, 1],
+        color: componentData.color || '#08B0D5',
+        material: componentData.material || 'steel',
+        power: componentData.power || 100,
+        durability: componentData.durability || 85,
+        weight: componentData.weight || 50,
+        created_by: userId,
+        metadata: {
+          addedBy: userId,
+          addedAt: new Date().toISOString(),
+          feature: componentData.feature || 'unknown'
+        }
       }
 
-      sessionComponents.push(submittedComponent)
-      submittedComponents.set(sessionId, sessionComponents)
+      await DatabaseService.createComponent(component)
 
       return NextResponse.json({
         success: true,
-        message: 'Component submitted to mecha canvas!',
-        component: submittedComponent,
-        totalComponents: sessionComponents.length
+        message: 'Component saved to mecha!',
+        component: component
       })
     } else if (action === 'improve') {
       // Mark component for improvement (don't add to canvas)
@@ -67,8 +74,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Session ID required' }, { status: 400 })
     }
 
-    // Get all submitted components for this session
-    const components = submittedComponents.get(sessionId) || []
+    // Get all components for this session from database
+    const components = await DatabaseService.getSessionComponents(sessionId)
 
     return NextResponse.json({
       success: true,
