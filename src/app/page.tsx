@@ -161,7 +161,6 @@ export default function MechaCrewApp() {
   const handleFeatureSelect = (feature: string, position: { x: number, y: number }) => {
     setSelectedFeature(feature)
     setFeaturePosition(position)
-    setShowCollaboration(true) // Open collaboration panel for AI preview
   }
 
   const handleComponentAccept = (component: any) => {
@@ -184,7 +183,6 @@ export default function MechaCrewApp() {
     setSelectedFeature(null)
     setFeaturePosition(null)
     setCurrentWorkflow('text')
-    setShowCollaboration(false)
   }
 
   const handleGenerateNew = () => {
