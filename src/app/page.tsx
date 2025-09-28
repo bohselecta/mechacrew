@@ -514,19 +514,48 @@ export default function MechaCrewApp() {
                 <h3 className="text-accent-yellow font-bold text-lg mb-4">✅ COMPONENT APPROVED!</h3>
                 <p className="text-white text-sm mb-4">Ready to add to mecha</p>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     const featureId = selectedFeature || 'unknown'
-                    setAddedComponents([...addedComponents, featureId])
-                    if (pendingVote?.componentData) {
-                      setApprovedComponents(prev => ({
-                        ...prev,
-                        [featureId]: {
-                          ...pendingVote.componentData,
-                          addedBy: username,
-                          addedAt: new Date().toLocaleTimeString()
+                    
+                    // Save to database
+                    try {
+                      const response = await fetch('/api/canvas', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          componentId: `component-${Date.now()}`,
+                          sessionId,
+                          userId: username,
+                          componentData: {
+                            ...pendingVote?.componentData,
+                            feature: featureId
+                          },
+                          action: 'submit'
+                        })
+                      })
+                      
+                      if (response.ok) {
+                        // Update local state
+                        setAddedComponents([...addedComponents, featureId])
+                        if (pendingVote?.componentData) {
+                          setApprovedComponents(prev => ({
+                            ...prev,
+                            [featureId]: {
+                              ...pendingVote.componentData,
+                              addedBy: username,
+                              addedAt: new Date().toLocaleTimeString()
+                            }
+                          }))
                         }
-                      }))
+                        
+                        // Add action message
+                        await addActionMessage(`Added ${pendingVote?.componentData?.name || 'component'} to ${featureId}`)
+                      }
+                    } catch (error) {
+                      console.error('Failed to save component:', error)
+                      setError('Failed to save component to mecha')
                     }
+                    
                     setCurrentWorkflow('text')
                     setSelectedFeature(null)
                     setPendingVote(null)

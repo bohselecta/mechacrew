@@ -263,10 +263,6 @@ export class DatabaseService {
       return []
     }
     
-    if (!sql) {
-      return []
-    }
-    
     const result = await sql`
       SELECT * FROM collaboration_messages 
       WHERE session_id = ${sessionId}
