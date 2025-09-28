@@ -21,20 +21,28 @@ export async function POST(request: NextRequest) {
 
     const messageId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
-    // Save message to database
-    const savedMessage = await DatabaseService.addMessage({
-      id: messageId,
-      session_id: sessionId,
-      user_id: userId,
-      user_name: userName,
-      message: message.trim(),
-      message_type: messageType as 'chat' | 'action'
-    })
+    try {
+      // Save message to database
+      const savedMessage = await DatabaseService.addMessage({
+        id: messageId,
+        session_id: sessionId,
+        user_id: userId,
+        user_name: userName,
+        message: message.trim(),
+        message_type: messageType as 'chat' | 'action'
+      })
 
-    return NextResponse.json({
-      success: true,
-      message: savedMessage
-    })
+      return NextResponse.json({
+        success: true,
+        message: savedMessage
+      })
+    } catch (dbError) {
+      console.error('Database error:', dbError)
+      return NextResponse.json({ 
+        error: 'Database connection failed. Message not saved.',
+        details: dbError instanceof Error ? dbError.message : 'Unknown database error'
+      }, { status: 500 })
+    }
 
   } catch (error) {
     console.error('Chat message error:', error)

@@ -150,10 +150,14 @@ export default function MechaCrewApp() {
         })
       })
       
-      const data = await response.json()
-      
-      if (data.success) {
-        setChatMessages(prev => [...prev, data.message])
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          setChatMessages(prev => [...prev, data.message])
+        }
+      } else {
+        const errorData = await response.json()
+        console.error('Chat API error:', errorData)
       }
     } catch (error) {
       console.error('Failed to send action message:', error)
@@ -336,6 +340,10 @@ export default function MechaCrewApp() {
           
           // Add action message
           await addActionMessage(`Added ${component.name || 'component'} to ${featureId}`)
+        } else {
+          const errorData = await response.json()
+          console.error('Canvas API error:', errorData)
+          setError(`Failed to save component: ${errorData.error || 'Unknown error'}`)
         }
         
         setCurrentWorkflow('text')

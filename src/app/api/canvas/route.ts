@@ -41,13 +41,21 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      await DatabaseService.createComponent(component)
-
-      return NextResponse.json({
-        success: true,
-        message: 'Component saved to mecha!',
-        component: component
-      })
+      try {
+        await DatabaseService.createComponent(component)
+        
+        return NextResponse.json({
+          success: true,
+          message: 'Component saved to mecha!',
+          component: component
+        })
+      } catch (dbError) {
+        console.error('Database error:', dbError)
+        return NextResponse.json({ 
+          error: 'Database connection failed. Component not saved.',
+          details: dbError instanceof Error ? dbError.message : 'Unknown database error'
+        }, { status: 500 })
+      }
     } else if (action === 'improve') {
       // Mark component for improvement (don't add to canvas)
       return NextResponse.json({
