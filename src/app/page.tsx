@@ -72,7 +72,7 @@ export default function MechaCrewApp() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           command, 
-          existingComponents: mechaComponents,
+          existingComponents: [],
           sessionId,
           userId: username
         })
