@@ -143,10 +143,6 @@ export default function MechaCrewApp() {
               [featureId]: pendingVote.componentData
             }))
           }
-          // Refresh canvas if it's open
-          if (showCanvas) {
-            // Canvas will auto-refresh via polling
-          }
         }
       } catch (error) {
         console.error('Submission failed:', error)
