@@ -56,50 +56,12 @@ export default function MechaCrewApp() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Initialize with demo components
+  // Initialize online users with current user
   useEffect(() => {
-    const demoComponents: MechaComponent[] = [
-      {
-        id: 'torso-1',
-        type: 'torso',
-        name: 'Core Chassis Alpha',
-        description: 'Primary structural frame with integrated power core',
-        position: [0, 0, 0],
-        rotation: [0, 0, 0],
-        scale: [2, 3, 1],
-        color: '#2E3E50',
-        material: 'steel',
-        power: 100,
-        durability: 95,
-        weight: 50,
-        createdBy: 'system',
-        createdAt: new Date()
-      },
-      {
-        id: 'head-1',
-        type: 'head',
-        name: 'Command Module',
-        description: 'Advanced sensor array with AI interface',
-        position: [0, 2.5, 0],
-        rotation: [0, 0, 0],
-        scale: [1.2, 1.2, 1.2],
-        color: '#E6322B',
-        material: 'titanium',
-        power: 80,
-        durability: 90,
-        weight: 15,
-        createdBy: 'system',
-        createdAt: new Date()
-      }
-    ]
-    
-    setMechaComponents(demoComponents)
-    
-    // Simulate loading
-    setTimeout(() => {
-      setIsLoaded(true)
-    }, 2000)
-  }, [])
+    if (isJoined && username) {
+      setOnlineUsers([username])
+    }
+  }, [isJoined, username])
 
   const handleAICommand = async (command: string) => {
     setIsGenerating(true)
@@ -131,7 +93,18 @@ export default function MechaCrewApp() {
           })
         } else {
           // Add immediately (refinement)
-          setMechaComponents(prev => [...prev, data.component])
+          const featureId = selectedFeature || 'unknown'
+          setAddedComponents(prev => [...prev, featureId])
+          setApprovedComponents(prev => ({
+            ...prev,
+            [featureId]: {
+              ...data.component,
+              addedBy: username,
+              addedAt: new Date().toLocaleTimeString()
+            }
+          }))
+          setCurrentWorkflow('text')
+          setSelectedFeature(null)
         }
       }
     } catch (error) {
@@ -143,10 +116,6 @@ export default function MechaCrewApp() {
 
   const toggleSimulation = () => {
     setIsSimulating(!isSimulating)
-  }
-
-  const resetMecha = () => {
-    setMechaComponents(prev => prev.filter(comp => comp.createdBy === 'system'))
   }
 
   const handleVote = async (componentId: string, vote: 'approve' | 'reject' | 'submit' | 'improve') => {
@@ -204,11 +173,18 @@ export default function MechaCrewApp() {
 
   const handleComponentAccept = (component: any) => {
     // Add component to mecha
-    setMechaComponents(prev => [...prev, component])
-    setAddedComponents(prev => [...prev, selectedFeature!])
+    const featureId = selectedFeature || 'unknown'
+    setAddedComponents(prev => [...prev, featureId])
+    setApprovedComponents(prev => ({
+      ...prev,
+      [featureId]: {
+        ...component,
+        addedBy: username,
+        addedAt: new Date().toLocaleTimeString()
+      }
+    }))
     setSelectedFeature(null)
     setFeaturePosition(null)
-    setShowCollaboration(false)
   }
 
   const handleComponentReject = () => {
