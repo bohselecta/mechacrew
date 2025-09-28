@@ -480,7 +480,7 @@ export default function MechaCrewApp() {
           <VotingComponent
             componentId={pendingVote.componentId}
             sessionId={pendingVote.sessionId}
-            userId: username={pendingVote.userId}
+            userId={pendingVote.userId}
             componentData={pendingVote.componentData}
             creatorName={pendingVote.creatorName}
             previewDescription={pendingVote.previewDescription}
