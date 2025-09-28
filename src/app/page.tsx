@@ -53,6 +53,8 @@ export default function MechaCrewApp() {
   const [isJoined, setIsJoined] = useState(false)
   const [onlineUsers, setOnlineUsers] = useState<string[]>([])
   const [currentWorkflow, setCurrentWorkflow] = useState<'text' | 'voting' | 'approved'>('text')
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Initialize with demo components
   useEffect(() => {
@@ -231,38 +233,44 @@ export default function MechaCrewApp() {
   }
 
   const handleTextApproval = (component: any) => {
-    // If only one user online, add directly. If multiple users, require voting
-    if (onlineUsers.length <= 1) {
-      // Direct add - no voting needed
-      const featureId = selectedFeature || 'unknown'
-      setAddedComponents(prev => [...prev, featureId])
-      setApprovedComponents(prev => ({
-        ...prev,
-        [featureId]: {
-          ...component,
-          addedBy: username,
-          addedAt: new Date().toLocaleTimeString()
-        }
-      }))
-      setCurrentWorkflow('text')
-      setSelectedFeature(null)
-    } else {
-      // Multiple users - require voting
-      setCurrentWorkflow('voting')
-      setPendingVote({
-        componentId: (component.name || 'component') + '-' + Date.now(),
-        sessionId,
-        userId: username,
-        componentData: {
-          ...component,
-          type: component.type || 'weapon',
-          power: component.power || 100,
-          durability: component.durability || 85,
-          weight: component.weight || 50
-        },
-        creatorName: username,
-        previewDescription: component.name || 'AI Generated Component'
-      })
+    try {
+      setError(null)
+      // If only one user online, add directly. If multiple users, require voting
+      if (onlineUsers.length <= 1) {
+        // Direct add - no voting needed
+        const featureId = selectedFeature || 'unknown'
+        setAddedComponents(prev => [...prev, featureId])
+        setApprovedComponents(prev => ({
+          ...prev,
+          [featureId]: {
+            ...component,
+            addedBy: username,
+            addedAt: new Date().toLocaleTimeString()
+          }
+        }))
+        setCurrentWorkflow('text')
+        setSelectedFeature(null)
+      } else {
+        // Multiple users - require voting
+        setCurrentWorkflow('voting')
+        setPendingVote({
+          componentId: (component.name || 'component') + '-' + Date.now(),
+          sessionId,
+          userId: username,
+          componentData: {
+            ...component,
+            type: component.type || 'weapon',
+            power: component.power || 100,
+            durability: component.durability || 85,
+            weight: component.weight || 50
+          },
+          creatorName: username,
+          previewDescription: component.name || 'AI Generated Component'
+        })
+      }
+    } catch (err) {
+      setError('Failed to process component. Please try again.')
+      console.error('Text approval error:', err)
     }
   }
 
@@ -348,7 +356,7 @@ export default function MechaCrewApp() {
       </motion.header>
 
       {/* Main Content */}
-      <div className="pt-20 h-screen flex">
+      <div className="pt-20 h-screen flex flex-col lg:flex-row">
         {/* Mecha Builder */}
         <div className="flex-1 relative">
           <MechaSVG 
@@ -375,7 +383,22 @@ export default function MechaCrewApp() {
         </div>
 
         {/* Collaboration Panel */}
-        <div className="w-96 bg-steel-gray border-l-2 border-neon-blue h-full overflow-y-auto">
+        <div className="w-full lg:w-96 bg-steel-gray border-l-2 border-neon-blue h-full overflow-y-auto">
+          {error && (
+            <div className="bg-mecha-red border border-accent-yellow rounded-lg p-4 m-4">
+              <p className="text-accent-yellow font-bold text-sm uppercase tracking-wider">
+                ⚠️ ERROR
+              </p>
+              <p className="text-white text-sm mt-2">{error}</p>
+              <button
+                onClick={() => setError(null)}
+                className="mt-2 bg-mecha-red hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-xs"
+              >
+                DISMISS
+              </button>
+            </div>
+          )}
+          
           {selectedFeature && featurePosition ? (
             currentWorkflow === 'text' ? (
               <AIPreview
@@ -389,7 +412,7 @@ export default function MechaCrewApp() {
               <VotingComponent
                 componentId={pendingVote.componentId}
                 sessionId={pendingVote.sessionId}
-                userId: username={pendingVote.userId}
+                userId={pendingVote.userId}
                 componentData={pendingVote.componentData}
                 creatorName={pendingVote.creatorName}
                 previewDescription={pendingVote.previewDescription}
@@ -440,6 +463,12 @@ export default function MechaCrewApp() {
                   <p>🗳️ Multi-user mode - voting required</p>
                 )}
               </div>
+              {isGenerating && (
+                <div className="mt-4">
+                  <div className="animate-spin w-6 h-6 border-2 border-neon-blue border-t-transparent rounded-full mx-auto mb-2"></div>
+                  <p className="text-neon-blue text-xs">AI GENERATING...</p>
+                </div>
+              )}
             </div>
           )}
         </div>
