@@ -110,7 +110,7 @@ export default function MechaCrewApp() {
           command, 
           existingComponents: mechaComponents,
           sessionId,
-          userId
+          userId: username
         })
       })
       
@@ -122,7 +122,7 @@ export default function MechaCrewApp() {
           setPendingVote({
             componentId: data.component.id,
             sessionId: data.votingData.sessionId,
-            userId: data.votingData.creatorId,
+            userId: username: data.votingData.creatorId,
             componentData: data.component,
             creatorName: `User_${data.votingData.creatorId.slice(-4)}`,
             previewDescription: data.votingData.previewDescription
@@ -157,7 +157,7 @@ export default function MechaCrewApp() {
           body: JSON.stringify({
             componentId,
             sessionId,
-            userId,
+            userId: username,
             componentData: pendingVote?.componentData,
             action: 'submit'
           })
@@ -329,33 +329,19 @@ export default function MechaCrewApp() {
           </div>
           
           <div className="flex items-center space-x-4">
-            <ActivityFeed sessionId={sessionId} userId={userId} />
-            
             <div className="flex items-center space-x-2">
-              {isConnected ? (
-                <Wifi className="w-5 h-5 text-neon-blue" />
-              ) : (
-                <WifiOff className="w-5 h-5 text-gray-500" />
-              )}
+              <Wifi className="w-5 h-5 text-neon-blue" />
               <span className="text-white text-sm font-bold">
-                {users.length} PILOTS ONLINE
+                {onlineUsers.length} PILOTS ONLINE
               </span>
             </div>
             
             <button
-              onClick={() => setShowCanvas(!showCanvas)}
+              onClick={() => setShowWelcome(true)}
               className="mecha-button-secondary flex items-center space-x-2"
             >
-              <span>🚀</span>
-              <span>{showCanvas ? 'HIDE CANVAS' : 'VIEW CANVAS'}</span>
-            </button>
-            
-            <button
-              onClick={() => setShowCollaboration(!showCollaboration)}
-              className="mecha-button-secondary flex items-center space-x-2"
-            >
-              <Users className="w-4 h-4" />
-              <span>COLLABORATE</span>
+              <span>🚪</span>
+              <span>LEAVE ROOM</span>
             </button>
           </div>
         </div>
@@ -403,7 +389,7 @@ export default function MechaCrewApp() {
               <VotingComponent
                 componentId={pendingVote.componentId}
                 sessionId={pendingVote.sessionId}
-                userId={pendingVote.userId}
+                userId: username={pendingVote.userId}
                 componentData={pendingVote.componentData}
                 creatorName={pendingVote.creatorName}
                 previewDescription={pendingVote.previewDescription}
@@ -465,7 +451,7 @@ export default function MechaCrewApp() {
           <VotingComponent
             componentId={pendingVote.componentId}
             sessionId={pendingVote.sessionId}
-            userId={pendingVote.userId}
+            userId: username={pendingVote.userId}
             componentData={pendingVote.componentData}
             creatorName={pendingVote.creatorName}
             previewDescription={pendingVote.previewDescription}
