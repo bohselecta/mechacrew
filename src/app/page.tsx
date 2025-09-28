@@ -124,7 +124,7 @@ export default function MechaCrewApp() {
           setPendingVote({
             componentId: data.component.id,
             sessionId: data.votingData.sessionId,
-            userId: username: data.votingData.creatorId,
+            userId: data.votingData.creatorId,
             componentData: data.component,
             creatorName: `User_${data.votingData.creatorId.slice(-4)}`,
             previewDescription: data.votingData.previewDescription
