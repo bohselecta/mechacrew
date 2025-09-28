@@ -51,10 +51,13 @@ export async function POST(request: NextRequest) {
         })
       } catch (dbError) {
         console.error('Database error:', dbError)
-        return NextResponse.json({ 
-          error: 'Database connection failed. Component not saved.',
-          details: dbError instanceof Error ? dbError.message : 'Unknown database error'
-        }, { status: 500 })
+        // Fallback: return success even if database fails
+        return NextResponse.json({
+          success: true,
+          message: 'Component added (offline mode)',
+          component: component,
+          warning: 'Database unavailable - component not persisted'
+        })
       }
     } else if (action === 'improve') {
       // Mark component for improvement (don't add to canvas)
@@ -82,14 +85,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Session ID required' }, { status: 400 })
     }
 
-    // Get all components for this session from database
-    const components = await DatabaseService.getSessionComponents(sessionId)
+    try {
+      // Get all components for this session from database
+      const components = await DatabaseService.getSessionComponents(sessionId)
 
-    return NextResponse.json({
-      success: true,
-      components,
-      totalComponents: components.length
-    })
+      return NextResponse.json({
+        success: true,
+        components,
+        totalComponents: components.length
+      })
+    } catch (dbError) {
+      console.error('Database error:', dbError)
+      // Fallback: return empty components if database fails
+      return NextResponse.json({
+        success: true,
+        components: [],
+        totalComponents: 0,
+        warning: 'Database unavailable - no component history'
+      })
+    }
 
   } catch (error) {
     console.error('Get components error:', error)
